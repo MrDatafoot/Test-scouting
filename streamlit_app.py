@@ -30,7 +30,8 @@ def load_and_process_data():
     if "Unnamed" in df.columns[0] or df.columns[0] == "A":
         df.rename(columns={df.columns[0]: "Âge"}, inplace=True)
     
-    player_col = "Joueur" if "Joueur" if "Joueur" in df.columns else df.columns[1]
+    # LA LIGNE CORRIGÉE ICI :
+    player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     age_col = "Âge"
     
     # Mapping des colonnes réelles vers les noms propres du visuel
@@ -215,8 +216,8 @@ with tab2:
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-        else:
-            st.warning("Veuillez sélectionner au moins 2 joueurs.")
+    else:
+        st.write("Aucun joueur disponible.")
 
 # 3. COMPARATEUR
 with tab3:
