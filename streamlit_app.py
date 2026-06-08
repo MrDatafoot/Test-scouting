@@ -5,7 +5,7 @@ import numpy as np
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection CSS minimale pour garantir le fond sombre "gaming" de l'application
+# Injection CSS pour le fond sombre "gaming" de l'application
 st.markdown("""
     <style>
         .stApp {
@@ -33,26 +33,25 @@ def load_and_process_data():
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     age_col = "Âge"
     
-    # Mapping mis à jour sans la catégorie "CENTRES"
+    # Mapping mis à jour : "CENT" (Centres) est totalement retiré
     stats_mapping = {
         'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 
         'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
-        'PERC': 'PERCUSSION', 'ENGA': 'ENGAGEMENT', 'RECU': 'RÉCUPÉRATION', 'DEFE': 'UN CONTRE UN', 
-        'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'
+        'PERC': 'PERCUSSION', 'ENGA': 'ENGAGEMENT', 'RECU': 'RÉCUPÉRATION', 
+        'DEFE': 'UN CONTRE UN', 'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'
     }
     
-    # Ordre strict mis à jour (sans 'CENT')
+    # Ordre des clés sans 'CENT'
     ordered_keys = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
     stats_cols = [c for c in ordered_keys if c in df.columns]
     
     roles_cols = [c for c in ['SL', 'BB', 'MN', 'ST', 'RC'] if c in df.columns]
-    
     if roles_cols:
         df['Rôle Majeur'] = df[roles_cols].idxmin(axis=1)
     else:
         df['Rôle Majeur'] = "Non défini"
         
-    # Calcul des centiles et de la note moyenne
+    # Calcul des centiles et de la note moyenne basée sur les catégories présentes
     centile_cols_generated = []
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -70,10 +69,10 @@ def load_and_process_data():
 try:
     df, player_col, age_col, stats_cols, stats_mapping = load_and_process_data()
 except Exception as e:
-    st.error(f"Erreur lors du traitement du fichier : {e}")
+    st.error(f"Erreur lors du chargement du fichier MILIEUX.ods : {e}")
     st.stop()
 
-# Code couleur unique pour bordure et texte
+# Code couleur pour l'affichage des centiles
 def get_colors(val):
     try:
         val = float(val)
@@ -105,7 +104,7 @@ except:
 
 tab1, tab2, tab3 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur"])
 
-# 1. BASE DE DONNÉES
+# 1. ENGLONGLET : BASE DE DONNÉES
 with tab1:
     st.subheader("Base globale des joueurs")
     
@@ -120,6 +119,7 @@ with tab1:
     
     view_df = filtered_df[existing_cols].copy()
     
+    # Renommer proprement les colonnes avec leur nom complet
     rename_dict = {'Note_Moyenne_Stats': 'NOTE MOYENNE'}
     for c in stats_cols:
         if f'{c} (Centile)' in view_df.columns:
@@ -133,7 +133,7 @@ with tab1:
         use_container_width=True
     )
 
-# 2. PROFIL JOUEUR
+# 2. ENGLONGLET : PROFIL JOUEUR
 with tab2:
     st.subheader("👤 Fiche d'identité & Profil du Joueur")
     player_list = filtered_df[player_col].unique() if player_col in filtered_df.columns else []
@@ -145,8 +145,9 @@ with tab2:
         p_club = p_data['Équipe'] if 'Équipe' in p_data else "Non défini"
         p_role = p_data['Rôle Majeur'] if 'Rôle Majeur' in p_data else "Milieu"
         p_note = p_data['Note_Moyenne_Stats']
+        p_age = p_data[age_col]
         
-        p_taille = p_data['Taille'] if 'Taille' in p_data else "-"
+        p_taille = p_data['Taille'] if 'Taille' in p_data else "1m80"
         p_valeur = p_data['Valeur'] if 'Valeur' in p_data else "-"
         p_saison = "2025/2026"
         
@@ -154,15 +155,13 @@ with tab2:
         
         with id_col1:
             st.markdown(f"""
-                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;'>
-                    <div style='width: 110px; height: 110px; border-radius: 50%; background-color: #0d1117; border: 2px solid #00BFFF; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;'>
+                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center;'>
+                    <div style='width: 100px; height: 100px; border-radius: 50%; background-color: #0d1117; border: 2px solid #00BFFF; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;'>
                         <span style='font-size: 50px;'>🏃‍♂️</span>
                     </div>
-                    <div style='font-size: 24px; font-weight: bold; color: #ffffff; margin-bottom: 5px;'>{str(p_data[player_col]).upper()}</div>
-                    <div style='font-size: 16px; font-weight: bold; color: #FF4D4D; margin-bottom: 15px;'>⚽ {p_club}</div>
-                    <div style='background-color: #0d1117; border: 1px solid #30363d; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #4CD964; font-weight: bold;'>
-                        {p_role}
-                    </div>
+                    <div style='font-size: 22px; font-weight: bold; color: #ffffff;'>{str(p_data[player_col]).upper()}</div>
+                    <div style='font-size: 15px; font-weight: bold; color: #FF4D4D; margin: 5px 0 15px 0;'>⚽ {p_club}</div>
+                    <span style='background-color: #0d1117; border: 1px solid #30363d; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #4CD964; font-weight: bold;'>{p_role}</span>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -170,9 +169,133 @@ with tab2:
             st.markdown(f"""
                 <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; height: 100%;'>
                     <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 15px;'>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                        <div>
                             <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Âge</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>🎂 {p_data[age_col]} ans</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>🎂 {p_age} ans</div>
                         </div>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform
+                        <div>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Note Moyenne</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📈 {p_note} / 100</div>
+                        </div>
+                        <div>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Taille</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📏 {p_taille}</div>
+                        </div>
+                        <div>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Saison</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>⏳ {p_saison}</div>
+                        </div>
+                        <div style='grid-column: span 2; border-top: 1px solid #30363d; padding-top: 10px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Valeur Marchande</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>💰 {p_valeur}</div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.write("### 📊 Centiles par caractéristique")
+        
+        stat_col1, stat_col2 = st.columns(2)
+        half = len(stats_cols) // 2 + (1 if len(stats_cols) % 2 != 0 else 0)
+        
+        for idx, c in enumerate(stats_cols):
+            c_centile = f'{c} (Centile)'
+            if c_centile in p_data:
+                val = p_data[c_centile]
+                color = get_colors(val)
+                label_clean = stats_mapping.get(c, c)
+                
+                target_col = stat_col1 if idx < half else stat_col2
+                
+                with target_col:
+                    st.markdown(f"""
+                        <div style='background-color: #161b22; border: 1px solid #30363d; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;'>
+                            <div style='font-weight: bold; color: #ffffff; font-size: 14px;'>{label_clean}</div>
+                            <div style='background-color: #0d1117; border: 2px solid {color}; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 16px; color: {color} !important;'>
+                                {val}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+    else:
+        st.write("Aucun joueur disponible.")
+
+# 3. ENGLONGLET : COMPARATEUR
+with tab3:
+    st.subheader("Comparateur de Cartes")
+    all_players = df[player_col].unique() if player_col in df.columns else []
+    
+    if len(all_players) > 1:
+        selected_players = st.multiselect("Sélectionnez les joueurs à comparer (2 à 4)", options=all_players, default=list(all_players[:2]))
+        
+        if len(selected_players) >= 2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            cols_header = st.columns([2] + [2] * len(selected_players))
+            with cols_header[0]:
+                st.markdown("""
+                    <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
+                        <div style='font-size: 16px; font-weight: bold; color: #ffffff;'>COMPARAISON</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+            for idx, p_name in enumerate(selected_players):
+                p_club = df[df[player_col] == p_name]['Équipe'].values[0] if 'Équipe' in df.columns else ""
+                with cols_header[idx + 1]:
+                    st.markdown(f"""
+                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
+                            <div style='font-size: 16px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</div>
+                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown("<hr style='border-color: #30363d; margin: 10px 0;'>", unsafe_allow_html=True)
+            
+            # Affichage de la Note Moyenne Générale
+            cols_note = st.columns([2] + [2] * len(selected_players))
+            with cols_note[0]:
+                st.markdown("<div style='padding: 12px 0; font-size: 14px; font-weight: bold; color: #00BFFF;'>NOTE MOYENNE</div>", unsafe_allow_html=True)
+            for idx, p_name in enumerate(selected_players):
+                p_data = df[df[player_col] == p_name].iloc[0]
+                val_note = p_data['Note_Moyenne_Stats']
+                color_note = get_colors(val_note)
+                with cols_note[idx + 1]:
+                    st.markdown(f"""
+                        <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
+                            <div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color_note} !important;'>
+                                {val_note}
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+            st.markdown("<hr style='border-color: #30363d; opacity: 0.5; margin: 10px 0;'>", unsafe_allow_html=True)
+            
+            # Affichage de toutes les autres catégories (sans centres)
+            for c in stats_cols:
+                cols_data = st.columns([2] + [2] * len(selected_players))
+                label_clean = stats_mapping.get(c, c)
+                
+                with cols_data[0]:
+                    st.markdown(f"""
+                        <div style='padding: 12px 0;'>
+                            <div style='font-size: 14px; font-weight: bold; color: #e6edf2;'>{label_clean}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                for idx, p_name in enumerate(selected_players):
+                    p_data = df[df[player_col] == p_name].iloc[0]
+                    val = p_data[f'{c} (Centile)']
+                    color = get_colors(val)
+                    
+                    with cols_data[idx + 1]:
+                        st.markdown(f"""
+                            <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
+                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color} !important;'>
+                                    {val}
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+        else:
+            st.warning("Veuillez sélectionner au moins 2 joueurs.")
+    else:
+        st.write("Pas assez de données pour faire une comparaison.")
