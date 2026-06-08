@@ -102,7 +102,9 @@ with tab1:
     cols_to_show = [c for c in cols_to_show if c in filtered_df.columns]
     
     if centile_cols:
-        st.dataframe(filtered_df[cols_to_show].style.applymap(color_centiles, subset=[c for c in centile_cols if c in cols_to_show]), use_container_width=True)
+        # Remplacement de applymap par map pour la compatibilité Pandas 3.0
+        styled_df = filtered_df[cols_to_show].style.map(color_centiles, subset=[c for c in centile_cols if c in cols_to_show])
+        st.dataframe(styled_df, use_container_width=True)
     else:
         st.dataframe(filtered_df[cols_to_show], use_container_width=True)
 
@@ -154,4 +156,5 @@ with tab3:
         
         if comp_rows:
             comp_df = pd.DataFrame(comp_rows)
-            st.dataframe(comp_df.style.applymap(color_centiles, subset=[f"{p1} (Centile)", f"{p2} (Centile)"]), use_container_width=True)
+            # Remplacement de applymap par map ici aussi
+            st.dataframe(comp_df.style.map(color_centiles, subset=[f"{p1} (Centile)", f"{p2} (Centile)"]), use_container_width=True)
