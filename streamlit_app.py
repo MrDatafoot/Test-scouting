@@ -1,12 +1,3 @@
-import os
-import sys
-
-# Étape magique : force l'installation de odfpy avant d'exécuter le reste
-try:
-    import odf
-except ImportError:
-    os.system(f"{sys.executable} -m pip install odfpy")
-
 import streamlit as st
 import pandas as pd
 import numpy as np
