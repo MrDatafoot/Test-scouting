@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px  # Ajout de Plotly pour le nuage de points
 
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
@@ -33,7 +34,7 @@ def load_and_process_data():
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     age_col = "Âge"
     
-    # Mapping mis à jour : "CENT" (Centres) est totalement retiré
+    # Mapping complet des caractéristiques
     stats_mapping = {
         'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 
         'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
@@ -41,7 +42,6 @@ def load_and_process_data():
         'DEFE': 'UN CONTRE UN', 'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'
     }
     
-    # Ordre des clés sans 'CENT'
     ordered_keys = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
     stats_cols = [c for c in ordered_keys if c in df.columns]
     
@@ -51,7 +51,7 @@ def load_and_process_data():
     else:
         df['Rôle Majeur'] = "Non défini"
         
-    # Calcul des centiles et de la note moyenne basée sur les catégories présentes
+    # Calcul des centiles et de la note moyenne
     centile_cols_generated = []
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -102,15 +102,14 @@ try:
 except:
     filtered_df = df.copy()
 
-tab1, tab2, tab3 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur"])
+# AJOUT DU 4ÈME ONGLET ICI
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ENGLONGLET : BASE DE DONNÉES
+# 1. ONGLET : BASE DE DONNÉES
 with tab1:
     st.subheader("Base globale des joueurs")
-    
     base_cols = [player_col, age_col]
-    if 'Équipe' in df.columns: 
-        base_cols.append('Équipe')
+    if 'Équipe' in df.columns: base_cols.append('Équipe')
     base_cols.append('Note_Moyenne_Stats')
     
     centile_cols = [f'{c} (Centile)' for c in stats_cols]
@@ -119,7 +118,6 @@ with tab1:
     
     view_df = filtered_df[existing_cols].copy()
     
-    # Renommer proprement les colonnes avec leur nom complet
     rename_dict = {'Note_Moyenne_Stats': 'NOTE MOYENNE'}
     for c in stats_cols:
         if f'{c} (Centile)' in view_df.columns:
@@ -128,12 +126,9 @@ with tab1:
     
     styled_columns = [stats_mapping[c] for c in stats_cols if stats_mapping[c] in view_df.columns]
     
-    st.dataframe(
-        view_df.style.map(color_centiles, subset=styled_columns), 
-        use_container_width=True
-    )
+    st.dataframe(view_df.style.map(color_centiles, subset=styled_columns), use_container_width=True)
 
-# 2. ENGLONGLET : PROFIL JOUEUR
+# 2. ONGLET : PROFIL JOUEUR
 with tab2:
     st.subheader("👤 Fiche d'identité & Profil du Joueur")
     player_list = filtered_df[player_col].unique() if player_col in filtered_df.columns else []
@@ -220,7 +215,7 @@ with tab2:
     else:
         st.write("Aucun joueur disponible.")
 
-# 3. ENGLONGLET : COMPARATEUR
+# 3. ONGLET : COMPARATEUR
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
@@ -233,25 +228,16 @@ with tab3:
             
             cols_header = st.columns([2] + [2] * len(selected_players))
             with cols_header[0]:
-                st.markdown("""
-                    <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                        <div style='font-size: 16px; font-weight: bold; color: #ffffff;'>COMPARAISON</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.markdown("<div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'><div style='font-size: 16px; font-weight: bold; color: #ffffff;'>COMPARAISON</div></div>", unsafe_allow_html=True)
                 
             for idx, p_name in enumerate(selected_players):
                 p_club = df[df[player_col] == p_name]['Équipe'].values[0] if 'Équipe' in df.columns else ""
                 with cols_header[idx + 1]:
-                    st.markdown(f"""
-                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                            <div style='font-size: 16px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</div>
-                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'><div style='font-size: 16px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</div><div style='font-size: 11px; color: #8b949e;'>{p_club}</div></div>", unsafe_allow_html=True)
             
             st.markdown("<hr style='border-color: #30363d; margin: 10px 0;'>", unsafe_allow_html=True)
             
-            # Affichage de la Note Moyenne Générale
+            # Ligne Note Moyenne
             cols_note = st.columns([2] + [2] * len(selected_players))
             with cols_note[0]:
                 st.markdown("<div style='padding: 12px 0; font-size: 14px; font-weight: bold; color: #00BFFF;'>NOTE MOYENNE</div>", unsafe_allow_html=True)
@@ -260,42 +246,95 @@ with tab3:
                 val_note = p_data['Note_Moyenne_Stats']
                 color_note = get_colors(val_note)
                 with cols_note[idx + 1]:
-                    st.markdown(f"""
-                        <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
-                            <div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color_note} !important;'>
-                                {val_note}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color_note} !important;'>{val_note}</div></div>", unsafe_allow_html=True)
                     
             st.markdown("<hr style='border-color: #30363d; opacity: 0.5; margin: 10px 0;'>", unsafe_allow_html=True)
             
-            # Affichage de toutes les autres catégories (sans centres)
+            # Lignes caractéristiques
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
                 
                 with cols_data[0]:
-                    st.markdown(f"""
-                        <div style='padding: 12px 0;'>
-                            <div style='font-size: 14px; font-weight: bold; color: #e6edf2;'>{label_clean}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"<div style='padding: 12px 0;'><div style='font-size: 14px; font-weight: bold; color: #e6edf2;'>{label_clean}</div></div>", unsafe_allow_html=True)
                 
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
                     color = get_colors(val)
-                    
                     with cols_data[idx + 1]:
-                        st.markdown(f"""
-                            <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
-                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color} !important;'>
-                                    {val}
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color} !important;'>{val}</div></div>", unsafe_allow_html=True)
         else:
             st.warning("Veuillez sélectionner au moins 2 joueurs.")
+
+# 4. ONGLET : ANALYSE GRAPHIQUE (NOUVEAU)
+with tab4:
+    st.subheader("📈 Nuage de Points Interactif - Analyse à 2 axes")
+    st.write("Sélectionnez deux catégories pour croiser les performances des joueurs et identifier les profils uniques.")
+    
+    # Création des listes d'options basées sur le nom propre
+    reverse_mapping = {v: k for k, v in stats_mapping.items()}
+    options_labels = list(stats_mapping.values())
+    
+    # Sélecteurs d'axes
+    graph_col1, graph_col2 = st.columns(2)
+    with graph_col1:
+        x_label = st.selectbox("Axe X (Horizontal)", options_labels, index=3) # Par défaut : CRÉATION
+    with graph_col2:
+        y_label = st.selectbox("Axe Y (Vertical)", options_labels, index=4)   # Par défaut : CONSTRUCTION
+        
+    # Retrouver les vrais noms de colonnes centiles correspondantes
+    x_col = f"{reverse_mapping[x_label]} (Centile)"
+    y_col = f"{reverse_mapping[y_label]} (Centile)"
+    
+    if len(filtered_df) > 0:
+        # Création d'un DataFrame de travail temporaire pour Plotly
+        plot_df = filtered_df.copy()
+        plot_df['Équipe_Label'] = plot_df['Équipe'] if 'Équipe' in plot_df.columns else "Non définie"
+        
+        # Configuration du graphique Plotly Express
+        fig = px.scatter(
+            plot_df,
+            x=x_col,
+            y=y_col,
+            text=player_col,          # Affiche le nom au-dessus du point
+            color='Note_Moyenne_Stats', # Variation de couleur basée sur la Note Générale
+            color_continuous_scale='Turbo', # Palette de couleur sportive éclatante
+            labels={
+                x_col: x_label,
+                y_col: y_label,
+                'Note_Moyenne_Stats': 'Note Moyenne'
+            },
+            hover_name=player_col,    # Titre de la bulle au survol
+            hover_data={
+                x_col: True,
+                y_col: True,
+                'Note_Moyenne_Stats': ':.1f',
+                'Équipe_Label': True,
+                'Rôle Majeur': True,
+                'Âge': True
+            }
+        )
+        
+        # Ajustement du texte et positionnement des points
+        fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.85, line=dict(width=1, color='White')))
+        
+        # Style complet du graphique pour fusionner avec le thème sombre (Hex #0d1117 / #161b22)
+        fig.update_layout(
+            plot_bgcolor='#161b22',
+            paper_bgcolor='#0d1117',
+            font_color='#ffffff',
+            xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d', range=[-5, 105]),
+            yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d', range=[-5, 105]),
+            height=650,
+            margin=dict(l=40, r=40, t=20, b=40)
+        )
+        
+        # Ajout des lignes de moyennes (médiane à 50 pour les centiles) pour créer les 4 quadrants
+        fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
+        fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
+        
+        # Affichage du graphique dans Streamlit
+        st.plotly_chart(fig, use_container_width=True)
     else:
-        st.write("Pas assez de données pour faire une comparaison.")
+        st.warning("Aucun joueur ne correspond aux filtres actuels pour générer le graphique.")
