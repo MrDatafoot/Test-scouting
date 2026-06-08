@@ -5,21 +5,18 @@ import numpy as np
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection de CSS pour basculer l'application en mode sombre "gaming"
+# Injection de CSS simplifiée au maximum (uniquement pour le fond de l'application)
 st.markdown("""
     <style>
         .stApp {
-            background-color: #0d1117;
-        }
-        h1, h2, h3, p, span, label {
-            color: #ffffff;
+            background-color: #0d1117 !important;
         }
         .stTabs [data-baseweb="tab"] {
-            color: #888888;
+            color: #888888 !important;
         }
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            color: #ffffff;
-            border-bottom-color: #00BFFF;
+            color: #ffffff !important;
+            border-bottom-color: #00BFFF !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -126,10 +123,10 @@ with tab2:
         
         col1, col2 = st.columns([1, 2])
         with col1:
-            st.metric("Nom", str(p_data[player_col]))
-            st.metric("Âge", f"{p_data[age_col]} ans")
-            if 'Équipe' in p_data: st.markdown(f"**Club :** {p_data['Équipe']}")
-            if 'M' in p_data: st.metric("Note Moyenne (M)", round(float(p_data['M']), 2))
+            st.write(f"### {p_data[player_col]}")
+            st.write(f"**Âge :** {p_data[age_col]} ans")
+            if 'Équipe' in p_data: st.write(f"**Club :** {p_data['Équipe']}")
+            if 'M' in p_data: st.write(f"**Note Moyenne (M) :** {round(float(p_data['M']), 2)}")
             
         with col2:
             st.write("### Centiles par caractéristique")
@@ -141,12 +138,14 @@ with tab2:
                     label_clean = stats_mapping.get(c, c)
                     st.markdown(f"""
                         <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
-                            <span style='font-weight:bold; color:#fff; font-size:14px;'>{label_clean}</span>
-                            <span style='background-color:#0d1117; color:{color} !important; border: 2px solid {color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
+                            <p style='margin:0; font-weight:bold; color:#ffffff; font-size:14px;'>{label_clean}</p>
+                            <div style='background-color:#0d1117; border: 2px solid {color}; padding:4px 12px; border-radius:4px; min-width:40px; text-align:center;'>
+                                <p style='margin:0; font-weight:bold; font-size:16px; color:{color} !important;'>{val}</p>
+                            </div>
                         </div>
                     """, unsafe_allow_html=True)
 
-# 3. COMPARATEUR (BOÎTE NÉON AVEC TEXTE COUVERT ET AJUSTÉ)
+# 3. COMPARATEUR
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
@@ -157,11 +156,12 @@ with tab3:
         if len(selected_players) >= 2:
             st.markdown("<br>", unsafe_allow_html=True)
             
+            # En-tête de comparaison
             cols_header = st.columns([2] + [2] * len(selected_players))
             with cols_header[0]:
                 st.markdown("""
                     <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                        <div style='font-size: 18px; font-weight: bold; color: #fff;'>COMPARAISON STATISTIQUE</div>
+                        <p style='margin:0; font-size: 18px; font-weight: bold; color: #ffffff;'>COMPARAISON STATISTIQUE</p>
                     </div>
                 """, unsafe_allow_html=True)
                 
@@ -169,20 +169,25 @@ with tab3:
                 p_club = df[df[player_col] == p_name]['Équipe'].values[0] if 'Équipe' in df.columns else ""
                 with cols_header[idx + 1]:
                     st.markdown(f"""
-                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px;'>
-                            <div style='font-size: 18px; font-weight: bold; color: #fff;'>{p_name.upper()}</div>
-                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
+                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
+                            <p style='margin:0; font-size: 18px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</p>
+                            <p style='margin:0; font-size: 11px; color: #8b949e;'>{p_club}</p>
                         </div>
                     """, unsafe_allow_html=True)
             
             st.markdown("<hr style='border-color: #30363d;'>", unsafe_allow_html=True)
             
+            # Lignes de données
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
                 
                 with cols_data[0]:
-                    st.markdown(f"<div style='padding: 12px 0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style='padding: 12px 0;'>
+                            <p style='margin:0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
@@ -190,15 +195,12 @@ with tab3:
                     color = get_colors(val)
                     
                     with cols_data[idx + 1]:
-                        # Utilisation de color: {color} !important dans le span pour écraser le blanc général
                         st.markdown(f"""
-                            <div style='text-align: center; padding: 4px 0;'>
-                                <span style='display: inline-block; background-color: #0d1117; border: 2px solid {color}; color: {color} !important; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; text-align: center;'>
-                                    {val}
-                                </span>
+                            <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
+                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center;'>
+                                    <p style='margin:0; font-weight: bold; font-size: 18px; color: {color} !important;'>{val}</p>
+                                </div>
                             </div>
                         """, unsafe_allow_html=True)
         else:
-            st.warning("Veuillez sélectionner au moins 2 joueurs.")
-    else:
-        st.write("Pas assez de données pour comparer.")
+            st.warning("Veuillez sélectionner au moins
