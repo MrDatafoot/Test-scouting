@@ -81,7 +81,6 @@ st.markdown("""
             font-size: 11px;
             color: #8b949e;
         }
-        /* Style des badges de note type FMInside / FUT */
         .fm-badge {
             display: inline-block;
             font-weight: bold;
@@ -143,16 +142,16 @@ except Exception as e:
     st.error(f"Erreur lors du chargement du fichier MILIEUX.ods : {e}")
     st.stop()
 
-# Code couleur pour l'affichage des badges de style FMInside
+# Code couleur corrigé pour éliminer les cercles gris sur les décimales
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val <= 10: return '#8A2BE2', '#ffffff'      # Violet (Fond, Texte)
-        elif 11 <= val <= 29: return '#FF4D4D', '#ffffff'    # Rouge
-        elif 30 <= val <= 49: return '#D35400', '#ffffff'    # Orange
-        elif 50 <= val <= 69: return '#FFFF4D', '#0d1117'    # Jaune (Texte sombre pour contraste)
-        elif 70 <= val <= 89: return '#4CD964', '#0d1117'    # Vert
-        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'   # Bleu ciel
+        if 0 <= val < 11: return '#8A2BE2', '#ffffff'       # Violet
+        elif 11 <= val < 30: return '#FF4D4D', '#ffffff'    # Rouge
+        elif 30 <= val < 50: return '#D35400', '#ffffff'    # Orange
+        elif 50 <= val < 70: return '#FFFF4D', '#0d1117'    # Jaune
+        elif 70 <= val < 90: return '#4CD964', '#0d1117'    # Vert
+        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'  # Bleu
     except:
         pass
     return '#444444', '#ffffff'
@@ -169,20 +168,32 @@ try:
 except:
     filtered_df = df.copy()
 
-# Tri par note moyenne décroissante par défaut pour l'esprit classement FM
-filtered_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
-
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ONGLET : BASE DE DONNÉES (STYLE FMINSIDE)
+# 1. ONGLET : BASE DE DONNÉES
 with tab1:
     st.subheader("Base globale des joueurs")
     
-    if len(filtered_df) > 0:
-        # Construction de la table HTML personnalisée
-        html_table = "<table class='fm-table'>"
+    # Options de tri dynamiques
+    sort_options_labels = ["NOTE MOYENNE"] + list(stats_mapping.values())
+    sort_mapping = {"NOTE MOYENNE": "Note_Moyenne_Stats"}
+    for k, v in stats_mapping.items():
+        sort_mapping[v] = f"{k} (Centile)"
         
-        # En-têtes de la table
+    sort_col1, sort_col2 = st.columns([2, 1])
+    with sort_col1:
+        selected_sort_label = st.selectbox("Trier la liste par :", sort_options_labels, index=0)
+    with sort_col2:
+        sort_order = st.radio("Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
+        
+    ascending_bool = (sort_order == "Croissant (Min → Max)")
+    actual_sort_column = sort_mapping[selected_sort_label]
+    
+    # Application du tri choisi par l'utilisateur
+    display_df = filtered_df.sort_values(by=actual_sort_column, ascending=ascending_bool)
+    
+    if len(display_df) > 0:
+        html_table = "<table class='fm-table'>"
         html_table += "<thead><tr>"
         html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th>"
         html_table += "<th class='fm-th'>Âge</th>"
@@ -192,18 +203,15 @@ with tab1:
             html_table += f"<th class='fm-th'>{stats_mapping[c]}</th>"
         html_table += "</tr></thead><tbody>"
         
-        # Remplissage des lignes joueurs
-        for _, row in filtered_df.iterrows():
+        for _, row in display_df.iterrows():
             p_name = str(row[player_col]).upper()
             p_age = row[age_col]
             p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
             p_note = row['Note_Moyenne_Stats']
             
-            # Couleurs de la Note Moyenne globale
             bg_note, text_note = get_colors(p_note)
             
             html_table += "<tr class='fm-tr'>"
-            # Cellule Joueur (Nom + Club + Mini icône)
             html_table += f"""
             <td class='fm-td fm-td-left'>
                 <div class='fm-player-cell'>
@@ -215,13 +223,9 @@ with tab1:
                 </div>
             </td>
             """
-            # Cellule Âge
             html_table += f"<td class='fm-td' style='font-weight: 500;'>{p_age}</td>"
-            
-            # Cellule Note globale (Mise en avant)
             html_table += f"<td class='fm-td'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
             
-            # Cellules de statistiques (badges de centiles individuels)
             for c in stats_cols:
                 val = row[f"{c} (Centile)"]
                 bg_c, text_c = get_colors(val)
@@ -230,8 +234,6 @@ with tab1:
             html_table += "</tr>"
             
         html_table += "</tbody></table>"
-        
-        # Injection de la table HTML dans Streamlit
         st.markdown(html_table, unsafe_allow_html=True)
     else:
         st.warning("Aucun joueur trouvé avec les filtres sélectionnés.")
