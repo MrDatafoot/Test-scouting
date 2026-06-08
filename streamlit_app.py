@@ -109,30 +109,23 @@ tab1, tab2, tab3 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔�
 with tab1:
     st.subheader("Base globale des joueurs")
     
-    # Colonnes de base à afficher
     base_cols = [player_col, age_col]
     if 'Équipe' in df.columns: 
         base_cols.append('Équipe')
     base_cols.append('Note_Moyenne_Stats')
     
-    # Liste ordonnée des colonnes centiles réelles
     centile_cols = [f'{c} (Centile)' for c in stats_cols]
     all_cols_to_show = base_cols + centile_cols
-    
-    # Filtrer uniquement les colonnes existantes
     existing_cols = [c for c in all_cols_to_show if c in filtered_df.columns]
     
-    # Création d'un DataFrame de visualisation pour renommer proprement les en-têtes
     view_df = filtered_df[existing_cols].copy()
     
-    # Renommer les colonnes de "UTIL (Centile)" vers "MINUTES" etc.
     rename_dict = {'Note_Moyenne_Stats': 'NOTE MOYENNE'}
     for c in stats_cols:
         if f'{c} (Centile)' in view_df.columns:
             rename_dict[f'{c} (Centile)'] = stats_mapping[c]
     view_df.rename(columns=rename_dict, inplace=True)
     
-    # Récupérer les nouveaux noms pour appliquer les styles colorés sur les centiles uniquement
     styled_columns = [stats_mapping[c] for c in stats_cols if stats_mapping[c] in view_df.columns]
     
     st.dataframe(
@@ -154,4 +147,32 @@ with tab2:
         p_note = p_data['Note_Moyenne_Stats']
         
         p_taille = p_data['Taille'] if 'Taille' in p_data else "-"
-        p_valeur = p_data
+        p_valeur = p_data['Valeur'] if 'Valeur' in p_data else "-"
+        p_saison = "2025/2026"
+        
+        id_col1, id_col2 = st.columns([1.2, 2])
+        
+        with id_col1:
+            st.markdown(f"""
+                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;'>
+                    <div style='width: 110px; height: 110px; border-radius: 50%; background-color: #0d1117; border: 2px solid #00BFFF; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;'>
+                        <span style='font-size: 50px;'>🏃‍♂️</span>
+                    </div>
+                    <div style='font-size: 24px; font-weight: bold; color: #ffffff; margin-bottom: 5px;'>{str(p_data[player_col]).upper()}</div>
+                    <div style='font-size: 16px; font-weight: bold; color: #FF4D4D; margin-bottom: 15px;'>⚽ {p_club}</div>
+                    <div style='background-color: #0d1117; border: 1px solid #30363d; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #4CD964; font-weight: bold;'>
+                        {p_role}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with id_col2:
+            st.markdown(f"""
+                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; height: 100%;'>
+                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 15px;'>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Âge</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>🎂 {p_data[age_col]} ans</div>
+                        </div>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform
