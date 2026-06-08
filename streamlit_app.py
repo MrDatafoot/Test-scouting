@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px  # Ajout de Plotly pour le nuage de points
+import plotly.express as px
 
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection CSS pour le fond sombre "gaming" de l'application
+# Injection CSS globale pour l'application et le style "FMInside"
 st.markdown("""
     <style>
         .stApp {
@@ -18,6 +18,79 @@ st.markdown("""
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
             color: #ffffff !important;
             border-bottom-color: #00BFFF !important;
+        }
+        
+        /* Styles pour la table personnalisée style FMInside */
+        .fm-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Source Sans Pro', sans-serif;
+            margin-top: 15px;
+        }
+        .fm-th {
+            color: #8b949e;
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 2px solid #30363d;
+        }
+        .fm-th-left {
+            text-align: left;
+        }
+        .fm-tr {
+            background-color: #161b22;
+            border-bottom: 1px solid #21262d;
+            transition: background-color 0.2s;
+        }
+        .fm-tr:hover {
+            background-color: #1f242c;
+        }
+        .fm-td {
+            padding: 12px 10px;
+            vertical-align: middle;
+            text-align: center;
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+        .fm-td-left {
+            text-align: left;
+        }
+        .fm-player-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .fm-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .fm-player-name {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .fm-player-club {
+            font-size: 11px;
+            color: #8b949e;
+        }
+        /* Style des badges de note type FMInside / FUT */
+        .fm-badge {
+            display: inline-block;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 4px 0;
+            width: 36px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
     </style>
 """, unsafe_allow_html=True)
@@ -34,7 +107,6 @@ def load_and_process_data():
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     age_col = "Âge"
     
-    # Mapping complet des caractéristiques
     stats_mapping = {
         'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 
         'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
@@ -51,7 +123,6 @@ def load_and_process_data():
     else:
         df['Rôle Majeur'] = "Non défini"
         
-    # Calcul des centiles et de la note moyenne
     centile_cols_generated = []
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -72,23 +143,19 @@ except Exception as e:
     st.error(f"Erreur lors du chargement du fichier MILIEUX.ods : {e}")
     st.stop()
 
-# Code couleur pour l'affichage des centiles
+# Code couleur pour l'affichage des badges de style FMInside
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val <= 10: return '#8A2BE2'      # Violet
-        elif 11 <= val <= 29: return '#FF4D4D'    # Rouge
-        elif 30 <= val <= 49: return '#D35400'    # Orange
-        elif 50 <= val <= 69: return '#FFFF4D'    # Jaune
-        elif 70 <= val <= 89: return '#4CD964'    # Vert
-        elif 90 <= val <= 100: return '#00BFFF'   # Bleu
+        if 0 <= val <= 10: return '#8A2BE2', '#ffffff'      # Violet (Fond, Texte)
+        elif 11 <= val <= 29: return '#FF4D4D', '#ffffff'    # Rouge
+        elif 30 <= val <= 49: return '#D35400', '#ffffff'    # Orange
+        elif 50 <= val <= 69: return '#FFFF4D', '#0d1117'    # Jaune (Texte sombre pour contraste)
+        elif 70 <= val <= 89: return '#4CD964', '#0d1117'    # Vert
+        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'   # Bleu ciel
     except:
         pass
-    return '#444444'
-
-def color_centiles(val):
-    color = get_colors(val)
-    return f'background-color: #161b22; color: {color}; border: 1px solid {color};'
+    return '#444444', '#ffffff'
 
 # --- INTERFACE UTILISATEUR ---
 st.title("⚽ Dashboard de Scouting - Milieux de Terrain")
@@ -96,37 +163,78 @@ st.title("⚽ Dashboard de Scouting - Milieux de Terrain")
 st.sidebar.header("Filtres de Recherche")
 try:
     df[age_col] = pd.to_numeric(df[age_col], errors='coerce').fillna(20).astype(int)
-    age_min, age_max = int(df[age_col].min()), int(df[age_col].max())
+    age_min, age_max = int(df[df[age_col] > 0][age_col].min()), int(df[age_col].max())
     selected_age = st.sidebar.slider("Tranche d'âge", age_min, age_max, (age_min, age_max))
     filtered_df = df[(df[age_col] >= selected_age[0]) & (df[age_col] <= selected_age[1])]
 except:
     filtered_df = df.copy()
 
-# AJOUT DU 4ÈME ONGLET ICI
+# Tri par note moyenne décroissante par défaut pour l'esprit classement FM
+filtered_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
+
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ONGLET : BASE DE DONNÉES
+# 1. ONGLET : BASE DE DONNÉES (STYLE FMINSIDE)
 with tab1:
     st.subheader("Base globale des joueurs")
-    base_cols = [player_col, age_col]
-    if 'Équipe' in df.columns: base_cols.append('Équipe')
-    base_cols.append('Note_Moyenne_Stats')
     
-    centile_cols = [f'{c} (Centile)' for c in stats_cols]
-    all_cols_to_show = base_cols + centile_cols
-    existing_cols = [c for c in all_cols_to_show if c in filtered_df.columns]
-    
-    view_df = filtered_df[existing_cols].copy()
-    
-    rename_dict = {'Note_Moyenne_Stats': 'NOTE MOYENNE'}
-    for c in stats_cols:
-        if f'{c} (Centile)' in view_df.columns:
-            rename_dict[f'{c} (Centile)'] = stats_mapping[c]
-    view_df.rename(columns=rename_dict, inplace=True)
-    
-    styled_columns = [stats_mapping[c] for c in stats_cols if stats_mapping[c] in view_df.columns]
-    
-    st.dataframe(view_df.style.map(color_centiles, subset=styled_columns), use_container_width=True)
+    if len(filtered_df) > 0:
+        # Construction de la table HTML personnalisée
+        html_table = "<table class='fm-table'>"
+        
+        # En-têtes de la table
+        html_table += "<thead><tr>"
+        html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th>"
+        html_table += "<th class='fm-th'>Âge</th>"
+        html_table += "<th class='fm-th'>Note Moyenne</th>"
+        
+        for c in stats_cols:
+            html_table += f"<th class='fm-th'>{stats_mapping[c]}</th>"
+        html_table += "</tr></thead><tbody>"
+        
+        # Remplissage des lignes joueurs
+        for _, row in filtered_df.iterrows():
+            p_name = str(row[player_col]).upper()
+            p_age = row[age_col]
+            p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
+            p_note = row['Note_Moyenne_Stats']
+            
+            # Couleurs de la Note Moyenne globale
+            bg_note, text_note = get_colors(p_note)
+            
+            html_table += "<tr class='fm-tr'>"
+            # Cellule Joueur (Nom + Club + Mini icône)
+            html_table += f"""
+            <td class='fm-td fm-td-left'>
+                <div class='fm-player-cell'>
+                    <div class='fm-avatar'>🏃‍♂️</div>
+                    <div>
+                        <div class='fm-player-name'>{p_name}</div>
+                        <div class='fm-player-club'>⚽ {p_club}</div>
+                    </div>
+                </div>
+            </td>
+            """
+            # Cellule Âge
+            html_table += f"<td class='fm-td' style='font-weight: 500;'>{p_age}</td>"
+            
+            # Cellule Note globale (Mise en avant)
+            html_table += f"<td class='fm-td'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
+            
+            # Cellules de statistiques (badges de centiles individuels)
+            for c in stats_cols:
+                val = row[f"{c} (Centile)"]
+                bg_c, text_c = get_colors(val)
+                html_table += f"<td class='fm-td'><span class='fm-badge' style='background-color: {bg_c}; color: {text_c};'>{val}</span></td>"
+                
+            html_table += "</tr>"
+            
+        html_table += "</tbody></table>"
+        
+        # Injection de la table HTML dans Streamlit
+        st.markdown(html_table, unsafe_allow_html=True)
+    else:
+        st.warning("Aucun joueur trouvé avec les filtres sélectionnés.")
 
 # 2. ONGLET : PROFIL JOUEUR
 with tab2:
@@ -198,9 +306,8 @@ with tab2:
             c_centile = f'{c} (Centile)'
             if c_centile in p_data:
                 val = p_data[c_centile]
-                color = get_colors(val)
+                color, text_color = get_colors(val)
                 label_clean = stats_mapping.get(c, c)
-                
                 target_col = stat_col1 if idx < half else stat_col2
                 
                 with target_col:
@@ -237,20 +344,18 @@ with tab3:
             
             st.markdown("<hr style='border-color: #30363d; margin: 10px 0;'>", unsafe_allow_html=True)
             
-            # Ligne Note Moyenne
             cols_note = st.columns([2] + [2] * len(selected_players))
             with cols_note[0]:
                 st.markdown("<div style='padding: 12px 0; font-size: 14px; font-weight: bold; color: #00BFFF;'>NOTE MOYENNE</div>", unsafe_allow_html=True)
             for idx, p_name in enumerate(selected_players):
                 p_data = df[df[player_col] == p_name].iloc[0]
                 val_note = p_data['Note_Moyenne_Stats']
-                color_note = get_colors(val_note)
+                color_note, _ = get_colors(val_note)
                 with cols_note[idx + 1]:
                     st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color_note} !important;'>{val_note}</div></div>", unsafe_allow_html=True)
                     
             st.markdown("<hr style='border-color: #30363d; opacity: 0.5; margin: 10px 0;'>", unsafe_allow_html=True)
             
-            # Lignes caractéristiques
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
@@ -261,80 +366,45 @@ with tab3:
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
-                    color = get_colors(val)
+                    color, _ = get_colors(val)
                     with cols_data[idx + 1]:
                         st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color} !important;'>{val}</div></div>", unsafe_allow_html=True)
         else:
             st.warning("Veuillez sélectionner au moins 2 joueurs.")
 
-# 4. ONGLET : ANALYSE GRAPHIQUE (NOUVEAU)
+# 4. ONGLET : ANALYSE GRAPHIQUE
 with tab4:
     st.subheader("📈 Nuage de Points Interactif - Analyse à 2 axes")
-    st.write("Sélectionnez deux catégories pour croiser les performances des joueurs et identifier les profils uniques.")
     
-    # Création des listes d'options basées sur le nom propre
     reverse_mapping = {v: k for k, v in stats_mapping.items()}
     options_labels = list(stats_mapping.values())
     
-    # Sélecteurs d'axes
     graph_col1, graph_col2 = st.columns(2)
     with graph_col1:
-        x_label = st.selectbox("Axe X (Horizontal)", options_labels, index=3) # Par défaut : CRÉATION
+        x_label = st.selectbox("Axe X (Horizontal)", options_labels, index=3)
     with graph_col2:
-        y_label = st.selectbox("Axe Y (Vertical)", options_labels, index=4)   # Par défaut : CONSTRUCTION
+        y_label = st.selectbox("Axe Y (Vertical)", options_labels, index=4)
         
-    # Retrouver les vrais noms de colonnes centiles correspondantes
     x_col = f"{reverse_mapping[x_label]} (Centile)"
     y_col = f"{reverse_mapping[y_label]} (Centile)"
     
     if len(filtered_df) > 0:
-        # Création d'un DataFrame de travail temporaire pour Plotly
         plot_df = filtered_df.copy()
         plot_df['Équipe_Label'] = plot_df['Équipe'] if 'Équipe' in plot_df.columns else "Non définie"
         
-        # Configuration du graphique Plotly Express
         fig = px.scatter(
-            plot_df,
-            x=x_col,
-            y=y_col,
-            text=player_col,          # Affiche le nom au-dessus du point
-            color='Note_Moyenne_Stats', # Variation de couleur basée sur la Note Générale
-            color_continuous_scale='Turbo', # Palette de couleur sportive éclatante
-            labels={
-                x_col: x_label,
-                y_col: y_label,
-                'Note_Moyenne_Stats': 'Note Moyenne'
-            },
-            hover_name=player_col,    # Titre de la bulle au survol
-            hover_data={
-                x_col: True,
-                y_col: True,
-                'Note_Moyenne_Stats': ':.1f',
-                'Équipe_Label': True,
-                'Rôle Majeur': True,
-                'Âge': True
-            }
+            plot_df, x=x_col, y=y_col, text=player_col, color='Note_Moyenne_Stats',
+            color_continuous_scale='Turbo', labels={x_col: x_label, y_col: y_label, 'Note_Moyenne_Stats': 'Note Moyenne'},
+            hover_name=player_col, hover_data={x_col: True, y_col: True, 'Note_Moyenne_Stats': ':.1f', 'Équipe_Label': True, 'Rôle Majeur': True, 'Âge': True}
         )
-        
-        # Ajustement du texte et positionnement des points
         fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.85, line=dict(width=1, color='White')))
-        
-        # Style complet du graphique pour fusionner avec le thème sombre (Hex #0d1117 / #161b22)
         fig.update_layout(
-            plot_bgcolor='#161b22',
-            paper_bgcolor='#0d1117',
-            font_color='#ffffff',
+            plot_bgcolor='#161b22', paper_bgcolor='#0d1117', font_color='#ffffff',
             xaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d', range=[-5, 105]),
             yaxis=dict(gridcolor='#30363d', zerolinecolor='#30363d', range=[-5, 105]),
-            height=650,
-            margin=dict(l=40, r=40, t=20, b=40)
+            height=650, margin=dict(l=40, r=40, t=20, b=40)
         )
-        
-        # Ajout des lignes de moyennes (médiane à 50 pour les centiles) pour créer les 4 quadrants
         fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
         fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
         
-        # Affichage du graphique dans Streamlit
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("Aucun joueur ne correspond aux filtres actuels pour générer le graphique.")
