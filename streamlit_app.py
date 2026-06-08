@@ -5,7 +5,7 @@ import numpy as np
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection de CSS simplifiée au maximum (uniquement pour le fond de l'application)
+# Injection CSS minimale pour garantir le fond sombre "gaming" de l'application
 st.markdown("""
     <style>
         .stApp {
@@ -123,10 +123,10 @@ with tab2:
         
         col1, col2 = st.columns([1, 2])
         with col1:
-            st.write(f"### {p_data[player_col]}")
-            st.write(f"**Âge :** {p_data[age_col]} ans")
-            if 'Équipe' in p_data: st.write(f"**Club :** {p_data['Équipe']}")
-            if 'M' in p_data: st.write(f"**Note Moyenne (M) :** {round(float(p_data['M']), 2)}")
+            st.markdown(f"### {p_data[player_col]}")
+            st.markdown(f"**Âge :** {p_data[age_col]} ans")
+            if 'Équipe' in p_data: st.markdown(f"**Club :** {p_data['Équipe']}")
+            if 'M' in p_data: st.markdown(f"**Note Moyenne (M) :** {round(float(p_data['M']), 2)}")
             
         with col2:
             st.write("### Centiles par caractéristique")
@@ -138,9 +138,9 @@ with tab2:
                     label_clean = stats_mapping.get(c, c)
                     st.markdown(f"""
                         <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
-                            <p style='margin:0; font-weight:bold; color:#ffffff; font-size:14px;'>{label_clean}</p>
-                            <div style='background-color:#0d1117; border: 2px solid {color}; padding:4px 12px; border-radius:4px; min-width:40px; text-align:center;'>
-                                <p style='margin:0; font-weight:bold; font-size:16px; color:{color} !important;'>{val}</p>
+                            <div style='font-weight:bold; color:#ffffff; font-size:14px;'>{label_clean}</div>
+                            <div style='background-color:#0d1117; border: 2px solid {color}; padding:4px 12px; border-radius:4px; min-width:40px; text-align:center; font-weight:bold; font-size:16px; color:{color} !important;'>
+                                {val}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -161,7 +161,7 @@ with tab3:
             with cols_header[0]:
                 st.markdown("""
                     <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                        <p style='margin:0; font-size: 18px; font-weight: bold; color: #ffffff;'>COMPARAISON STATISTIQUE</p>
+                        <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>COMPARAISON STATISTIQUE</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
@@ -170,8 +170,8 @@ with tab3:
                 with cols_header[idx + 1]:
                     st.markdown(f"""
                         <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                            <p style='margin:0; font-size: 18px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</p>
-                            <p style='margin:0; font-size: 11px; color: #8b949e;'>{p_club}</p>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</div>
+                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
                         </div>
                     """, unsafe_allow_html=True)
             
@@ -185,7 +185,7 @@ with tab3:
                 with cols_data[0]:
                     st.markdown(f"""
                         <div style='padding: 12px 0;'>
-                            <p style='margin:0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</p>
+                            <div style='font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 
@@ -197,10 +197,12 @@ with tab3:
                     with cols_data[idx + 1]:
                         st.markdown(f"""
                             <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
-                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center;'>
-                                    <p style='margin:0; font-weight: bold; font-size: 18px; color: {color} !important;'>{val}</p>
+                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 18px; color: {color} !important;'>
+                                    {val}
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
         else:
-            st.warning("Veuillez sélectionner au moins
+            st.warning("Veuillez sélectionner au moins 2 joueurs.")
+    else:
+        st.write("Pas assez de données pour comparer.")
