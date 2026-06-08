@@ -67,23 +67,23 @@ except Exception as e:
     st.error(f"Erreur lors du traitement du fichier : {e}")
     st.stop()
 
-# Dictionnaire de couleurs (Fonds complets et couleur de texte ajustée pour la lisibilité)
+# Palette de couleurs uniques pour les bordures et les textes (Style modèle d'origine)
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val <= 10: return '#8A2BE2', '#ffffff'      # Violet / Texte Blanc
-        elif 11 <= val <= 29: return '#FF4D4D', '#ffffff'    # Rouge / Texte Blanc
-        elif 30 <= val <= 49: return '#D35400', '#ffffff'    # Orange / Texte Blanc
-        elif 50 <= val <= 69: return '#FFFF4D', '#000000'    # Jaune / Texte Noir
-        elif 70 <= val <= 89: return '#4CD964', '#000000'    # Vert / Texte Noir
-        elif 90 <= val <= 100: return '#00BFFF', '#000000'   # Bleu / Texte Noir
+        if 0 <= val <= 10: return '#8A2BE2'      # Violet
+        elif 11 <= val <= 29: return '#FF4D4D'    # Rouge
+        elif 30 <= val <= 49: return '#D35400'    # Orange
+        elif 50 <= val <= 69: return '#FFFF4D'    # Jaune
+        elif 70 <= val <= 89: return '#4CD964'    # Vert
+        elif 90 <= val <= 100: return '#00BFFF'   # Bleu
     except:
         pass
-    return '#222222', '#ffffff'
+    return '#444444'
 
 def color_centiles(val):
-    bg, text_color = get_colors(val)
-    return f'background-color: {bg}; color: {text_color};'
+    color = get_colors(val)
+    return f'background-color: #161b22; color: {color}; border: 1px solid {color};'
 
 # --- INTERFACE UTILISATEUR ---
 st.title("⚽ Dashboard de Scouting - Milieux de Terrain")
@@ -137,16 +137,16 @@ with tab2:
                 c_centile = f'{c} (Centile)'
                 if c_centile in p_data:
                     val = p_data[c_centile]
-                    bg, text_color = get_colors(val)
+                    color = get_colors(val)
                     label_clean = stats_mapping.get(c, c)
                     st.markdown(f"""
                         <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
                             <span style='font-weight:bold; color:#fff; font-size:14px;'>{label_clean}</span>
-                            <span style='background-color:{bg}; color:{text_color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
+                            <span style='background-color:#0d1117; color:{color}; border: 2px solid {color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
                         </div>
                     """, unsafe_allow_html=True)
 
-# 3. COMPARATEUR (MIS À JOUR)
+# 3. COMPARATEUR (STYLE SUR-MESURE)
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
@@ -157,12 +157,12 @@ with tab3:
         if len(selected_players) >= 2:
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # En-tête avec titre aligné sur le style des cartes joueurs
+            # En-tête avec titre "COMPARAISON STATISTIQUE" calqué sur le style des joueurs
             cols_header = st.columns([2] + [2] * len(selected_players))
             with cols_header[0]:
                 st.markdown("""
                     <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                        <div style='font-size: 15px; font-weight: bold; color: #fff; letter-spacing: 0.5px;'>COMPARAISON STATISTIQUE</div>
+                        <div style='font-size: 18px; font-weight: bold; color: #fff;'>COMPARAISON STATISTIQUE</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
@@ -178,7 +178,7 @@ with tab3:
             
             st.markdown("<hr style='border-color: #30363d;'>", unsafe_allow_html=True)
             
-            # Affichage des lignes de statistiques dans l'ordre du tableau
+            # Affichage des lignes de statistiques
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
@@ -187,16 +187,16 @@ with tab3:
                 with cols_data[0]:
                     st.markdown(f"<div style='padding: 12px 0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>", unsafe_allow_html=True)
                 
-                # Chiffres des joueurs (fonds colorés à 100%)
+                # Chiffres des joueurs (Style Contour Néon + Texte de la même couleur)
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
-                    bg, text_color = get_colors(val)
+                    color = get_colors(val)
                     
                     with cols_data[idx + 1]:
                         st.markdown(f"""
                             <div style='text-align: center; padding: 4px 0;'>
-                                <span style='display: inline-block; background-color: {bg}; color: {text_color}; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; border: 1px solid rgba(255,255,255,0.1); text-align: center;'>
+                                <span style='display: inline-block; background-color: #0d1117; border: 2px solid {color}; color: {color}; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; text-align: center;'>
                                     {val}
                                 </span>
                             </div>
