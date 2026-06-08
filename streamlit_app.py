@@ -6,11 +6,8 @@ import plotly.express as px
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection CSS globale et script de tri par clic direct (Sortable)
+# Injection CSS globale pour l'application (Thème sombre Gaming)
 st.markdown("""
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
-
     <style>
         .stApp {
             background-color: #0d1117 !important;
@@ -22,96 +19,12 @@ st.markdown("""
             color: #ffffff !important;
             border-bottom-color: #00BFFF !important;
         }
-        
-        /* Styles pour la table personnalisée style FMInside */
-        .fm-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: 'Source Sans Pro', sans-serif;
-            margin-top: 15px;
-        }
-        .fm-th {
-            color: #8b949e;
-            text-transform: uppercase;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 12px 10px;
-            text-align: center;
-            border-bottom: 2px solid #30363d;
-            cursor: pointer; /* Indique que c'est cliquable */
-            user-select: none;
-        }
-        .fm-th:hover {
-            color: #ffffff;
-            background-color: #21262d;
-        }
-        .fm-th-left {
-            text-align: left;
-        }
-        
-        /* Flèches indicatrices de tri */
-        .fm-th[aria-sort="ascending"]::after {
-            content: " ▲";
-            font-size: 9px;
-            color: #00BFFF;
-        }
-        .fm-th[aria-sort="descending"]::after {
-            content: " ▼";
-            font-size: 9px;
-            color: #00BFFF;
-        }
-
-        .fm-tr {
+        /* Style pour rendre le tableau plus compact et proche de FM */
+        div[data-testid="stDataFrame"] {
             background-color: #161b22;
-            border-bottom: 1px solid #21262d;
-            transition: background-color 0.2s;
-        }
-        .fm-tr:hover {
-            background-color: #1f242c;
-        }
-        .fm-td {
-            padding: 12px 10px;
-            vertical-align: middle;
-            text-align: center;
-            color: #c9d1d9;
-            font-size: 14px;
-        }
-        .fm-td-left {
-            text-align: left;
-        }
-        .fm-player-cell {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .fm-avatar {
-            width: 32px;
-            height: 32px;
-            background-color: #0d1117;
+            border-radius: 8px;
+            padding: 10px;
             border: 1px solid #30363d;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-        .fm-player-name {
-            font-weight: bold;
-            color: #ffffff;
-        }
-        .fm-player-club {
-            font-size: 11px;
-            color: #8b949e;
-        }
-        .fm-badge {
-            display: inline-block;
-            font-weight: bold;
-            font-size: 13px;
-            padding: 4px 0;
-            width: 36px;
-            border-radius: 6px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
     </style>
 """, unsafe_allow_html=True)
@@ -164,19 +77,30 @@ except Exception as e:
     st.error(f"Erreur lors du chargement du fichier MILIEUX.ods : {e}")
     st.stop()
 
-# Code couleur
-def get_colors(val):
+# Code couleur FMInside sous forme de barres/badges pour le tableau natif
+def get_color_emoji(val):
     try:
         val = float(val)
-        if 0 <= val < 11: return '#8A2BE2', '#ffffff'       
-        elif 11 <= val < 30: return '#FF4D4D', '#ffffff'    
-        elif 30 <= val < 50: return '#D35400', '#ffffff'    
-        elif 50 <= val < 70: return '#FFFF4D', '#0d1117'    
-        elif 70 <= val < 90: return '#4CD964', '#0d1117'    
-        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'  
+        if 90 <= val <= 100: return "🔵"  # Elite
+        elif 70 <= val < 90: return "🟢"   # Très bon
+        elif 50 <= val < 70: return "🟡"   # Moyen
+        elif 30 <= val < 50: return "🟠"   # Faible
+        else: return "🔴"                  # Très faible
+    except:
+        return "⚪"
+
+def get_colors_raw(val):
+    try:
+        val = float(val)
+        if 0 <= val < 11: return '#8A2BE2'       
+        elif 11 <= val < 30: return '#FF4D4D'    
+        elif 30 <= val < 50: return '#D35400'    
+        elif 50 <= val < 70: return '#FFFF4D'    
+        elif 70 <= val < 90: return '#4CD964'    
+        elif 90 <= val <= 100: return '#00BFFF'  
     except:
         pass
-    return '#444444', '#ffffff'
+    return '#444444'
 
 # --- INTERFACE UTILISATEUR ---
 st.title("⚽ Dashboard de Scouting - Milieux de Terrain")
@@ -190,74 +114,53 @@ try:
 except:
     filtered_df = df.copy()
 
-# Tri initial par note moyenne décroissante
-display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
-
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ONGLET : BASE DE DONNÉES (TRI INTERACTIF AU CLIC)
+# 1. ONGLET : BASE DE DONNÉES (VERSION AVEC TRI NATIF)
 with tab1:
     st.subheader("Base globale des joueurs")
-    st.caption("💡 Cliquez sur le nom d'une colonne (Note Moyenne, Création, etc.) pour trier directement la liste.")
+    st.caption("💡 Cliquez sur le titre de n'importe quelle colonne pour trier instantanément les joueurs.")
     
-    if len(display_df) > 0:
-        # Ajout d'un ID 'fmin-table' pour que le script sache quelle table cibler
-        html_table = "<table class='fm-table' id='fmin-table'>"
-        html_table += "<thead><tr>"
-        # data-sort-default pousse le premier tri par défaut
-        html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th>"
-        html_table += "<th class='fm-th'>Âge</th>"
-        html_table += "<th class='fm-th'>Note Moyenne</th>"
+    if len(filtered_df) > 0:
+        # Préparation d'un dataframe ultra propre dédié à l'affichage
+        table_df = pd.DataFrame()
         
+        # Fusion Nom du Joueur et Club à la FMInside
+        clubs = filtered_df['Équipe'].fillna('Sans club').astype(str)
+        table_df['JOUEUR / CLUB'] = filtered_df[player_col].str.upper() + " (" + clubs + ")"
+        table_df['ÂGE'] = filtered_df[age_col]
+        table_df['NOTE MOYENNE'] = filtered_df['Note_Moyenne_Stats']
+        
+        # Ajout des colonnes de statistiques nettoyées
         for c in stats_cols:
-            html_table += f"<th class='fm-th'>{stats_mapping[c]}</th>"
-        html_table += "</tr></thead><tbody>"
+            clean_label = stats_mapping[c]
+            # On ajoute un petit indicateur visuel (pastille de couleur emoji) devant le chiffre
+            table_df[clean_label] = filtered_df[f"{c} (Centile)"].apply(lambda x: f"{get_color_emoji(x)} {x}")
         
-        for _, row in display_df.iterrows():
-            p_name = str(row[player_col]).upper()
-            p_age = row[age_col]
-            p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
-            p_note = row['Note_Moyenne_Stats']
-            
-            bg_note, text_note = get_colors(p_note)
-            
-            html_table += "<tr class='fm-tr'>"
-            # data-sort permet au script JavaScript de trier sur le texte en MAJUSCULE
-            html_table += f"""
-            <td class='fm-td fm-td-left' data-sort='{p_name}'>
-                <div class='fm-player-cell'>
-                    <div class='fm-avatar'>🏃‍♂️</div>
-                    <div>
-                        <div class='fm-player-name'>{p_name}</div>
-                        <div class='fm-player-club'>⚽ {p_club}</div>
-                    </div>
-                </div>
-            </td>
-            """
-            html_table += f"<td class='fm-td' style='font-weight: 500;'>{p_age}</td>"
-            html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
-            
-            for c in stats_cols:
-                val = row[f"{c} (Centile)"]
-                bg_c, text_c = get_colors(val)
-                html_table += f"<td class='fm-td' data-sort='{val}'><span class='fm-badge' style='background-color: {bg_c}; color: {text_c};'>{val}</span></td>"
-                
-            html_table += "</tr>"
-            
-        html_table += "</tbody></table>"
+        # Tri initial par note moyenne décroissante
+        table_df = table_df.sort_values(by='NOTE MOYENNE', ascending=False)
         
-        # Ce petit script s'active dès que le tableau est affiché et gère les clics
-        js_script = """
-        <script>
-            setTimeout(function() {
-                new Tablesort(document.getElementById('fmin-table'), {
-                    descending: true
-                });
-            }, 500);
-        </script>
-        """
+        # Configuration avancée des colonnes Streamlit
+        column_config = {
+            "JOUEUR / CLUB": st.column_config.TextColumn("Joueur / Club", width="medium"),
+            "ÂGE": st.column_config.NumberColumn("Âge", format="%d", width="small"),
+            "NOTE MOYENNE": st.column_config.ProgressColumn(
+                "Note Moyenne",
+                help="Note moyenne globale basée sur les centiles",
+                format="%.1f",
+                min_value=0,
+                max_value=100,
+                width="medium"
+            )
+        }
         
-        st.markdown(html_table + js_script, unsafe_allow_html=True)
+        # Affichage du tableau interactif
+        st.dataframe(
+            table_df,
+            column_config=column_config,
+            hide_index=True,
+            use_container_width=True
+        )
     else:
         st.warning("Aucun joueur trouvé avec les filtres sélectionnés.")
 
@@ -331,7 +234,7 @@ with tab2:
             c_centile = f'{c} (Centile)'
             if c_centile in p_data:
                 val = p_data[c_centile]
-                color, text_color = get_colors(val)
+                color = get_colors_raw(val)
                 label_clean = stats_mapping.get(c, c)
                 target_col = stat_col1 if idx < half else stat_col2
                 
@@ -373,7 +276,7 @@ with tab3:
             for idx, p_name in enumerate(selected_players):
                 p_data = df[df[player_col] == p_name].iloc[0]
                 val_note = p_data['Note_Moyenne_Stats']
-                color_note, _ = get_colors(val_note)
+                color_note = get_colors_raw(val_note)
                 with cols_note[idx + 1]:
                     st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color_note} !important;'>{val_note}</div></div>", unsafe_allow_html=True)
                     
@@ -389,11 +292,9 @@ with tab3:
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
-                    color, _ = get_colors(val)
+                    color = get_colors_raw(val)
                     with cols_data[idx + 1]:
                         st.markdown(f"<div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'><div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; color: {color} !important;'>{val}</div></div>", unsafe_allow_html=True)
-        else:
-            st.warning("Veuillez sélectionner au moins 2 joueurs.")
 
 # 4. ONGLET : ANALYSE GRAPHIQUE
 with tab4:
