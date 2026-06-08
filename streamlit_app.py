@@ -9,7 +9,7 @@ st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 @st.cache_data
 def load_and_process_data():
     # Lecture du fichier ODS
-    df = pd.read_excel("MILIEUX.ods", engine="odfpy")
+ df = pd.read_excel("MILIEUX.ods")
     
     # Définition des colonnes
     roles_cols = ['SL', 'BB', 'MN', 'ST', 'RC']
