@@ -39,12 +39,15 @@ def load_and_process_data():
     # Mapping des colonnes réelles vers les noms propres du visuel
     stats_mapping = {
         'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 
-        'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
-        'PERC': 'PERCUSSION', 'RECU': 'RÉCUPÉRATION', 'DEFE': 'UN CONTRE UN', 
-        'AERI': 'AÉRIEN', 'CENT': 'CENTRES', 'ENGA': 'ENGAGEMENT', 'ANTI': 'ANTICIPATION'
+        'CREA': 'CRÉATION', 'CENT': 'CENTRES', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
+        'PERC': 'PERCUSSION', 'ENGA': 'ENGAGEMENT', 'RECU': 'RÉCUPÉRATION', 'DEFE': 'UN CONTRE UN', 
+        'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'
     }
     
-    stats_cols = [c for c in stats_mapping.keys() if c in df.columns]
+    # ORDRE STRICT RESPECTANT TON TABLEAU (avec CENTRES entre CRÉATION et CONSTRUCTION)
+    ordered_keys = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CENT', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
+    stats_cols = [c for c in ordered_keys if c in df.columns]
+    
     roles_cols = [c for c in ['SL', 'BB', 'MN', 'ST', 'RC'] if c in df.columns]
     
     if roles_cols:
@@ -64,23 +67,23 @@ except Exception as e:
     st.error(f"Erreur lors du traitement du fichier : {e}")
     st.stop()
 
-# Dictionnaire de couleurs (Fonds et Bordures) calqué sur le visuel
+# Dictionnaire de couleurs (Fonds complets et couleur de texte ajustée pour la lisibilité)
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val <= 10: return '#8A2BE2', '#b066ff'      # Violet
-        elif 11 <= val <= 29: return '#FF4D4D', '#ff8080'    # Rouge
-        elif 30 <= val <= 49: return '#D35400', '#E67E22'    # Orange / Marron terne
-        elif 50 <= val <= 69: return '#B39200', '#F1C40F'    # Jaune foncé / Or
-        elif 70 <= val <= 89: return '#27AE60', '#2ECC71'    # Vert
-        elif 90 <= val <= 100: return '#2980B9', '#3498DB'   # Bleu
+        if 0 <= val <= 10: return '#8A2BE2', '#ffffff'      # Violet / Texte Blanc
+        elif 11 <= val <= 29: return '#FF4D4D', '#ffffff'    # Rouge / Texte Blanc
+        elif 30 <= val <= 49: return '#D35400', '#ffffff'    # Orange / Texte Blanc
+        elif 50 <= val <= 69: return '#FFFF4D', '#000000'    # Jaune / Texte Noir
+        elif 70 <= val <= 89: return '#4CD964', '#000000'    # Vert / Texte Noir
+        elif 90 <= val <= 100: return '#00BFFF', '#000000'   # Bleu / Texte Noir
     except:
         pass
-    return '#222', '#444'
+    return '#222222', '#ffffff'
 
 def color_centiles(val):
-    bg, border = get_colors(val)
-    return f'background-color: {bg}; color: white;'
+    bg, text_color = get_colors(val)
+    return f'background-color: {bg}; color: {text_color};'
 
 # --- INTERFACE UTILISATEUR ---
 st.title("⚽ Dashboard de Scouting - Milieux de Terrain")
@@ -134,64 +137,66 @@ with tab2:
                 c_centile = f'{c} (Centile)'
                 if c_centile in p_data:
                     val = p_data[c_centile]
-                    bg, border = get_colors(val)
+                    bg, text_color = get_colors(val)
                     label_clean = stats_mapping.get(c, c)
                     st.markdown(f"""
-                        <div style='background-color: #161b22; border: 1px solid {border}; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
+                        <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
                             <span style='font-weight:bold; color:#fff; font-size:14px;'>{label_clean}</span>
-                            <span style='background-color:{bg}; border: 2px solid {border}; color:white; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px;'>{val}</span>
+                            <span style='background-color:{bg}; color:{text_color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
                         </div>
                     """, unsafe_allow_html=True)
 
-# 3. COMPARATEUR (INSPIRÉ DU VISUEL)
+# 3. COMPARATEUR (MIS À JOUR)
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
     
     if len(all_players) > 1:
-        # Sélection de 2 à 4 joueurs pour coller au visuel
         selected_players = st.multiselect("Sélectionnez les joueurs à comparer (2 à 4)", options=all_players, default=list(all_players[:2]))
         
         if len(selected_players) >= 2:
-            # Création de la structure en lignes (1 ligne par stat)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # En-tête avec les Noms des joueurs
+            # En-tête avec titre aligné sur le style des cartes joueurs
             cols_header = st.columns([2] + [2] * len(selected_players))
             with cols_header[0]:
-                st.markdown("<h3 style='text-align: left; color: #888 !important;'>STATISTIQUE</h3>", unsafe_allow_html=True)
+                st.markdown("""
+                    <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
+                        <div style='font-size: 15px; font-weight: bold; color: #fff; letter-spacing: 0.5px;'>COMPARAISON STATISTIQUE</div>
+                    </div>
+                """, unsafe_allow_html=True)
                 
             for idx, p_name in enumerate(selected_players):
                 p_club = df[df[player_col] == p_name]['Équipe'].values[0] if 'Équipe' in df.columns else ""
                 with cols_header[idx + 1]:
                     st.markdown(f"""
-                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d;'>
-                            <div style='font-size: 20px; font-weight: bold; color: #fff;'>{p_name.upper()}</div>
-                            <div style='font-size: 12px; color: #8b949e;'>{p_club}</div>
+                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px;'>
+                            <div style='font-size: 18px; font-weight: bold; color: #fff;'>{p_name.upper()}</div>
+                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
                         </div>
                     """, unsafe_allow_html=True)
             
             st.markdown("<hr style='border-color: #30363d;'>", unsafe_allow_html=True)
             
-            # Affichage des lignes de stats
+            # Affichage des lignes de statistiques dans l'ordre du tableau
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
                 
-                # Nom de la stat à gauche
+                # Nom de la statistique à gauche
                 with cols_data[0]:
-                    st.markdown(f"<div style='padding: 10px 0; font-size: 16px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='padding: 12px 0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>", unsafe_allow_html=True)
                 
-                # Notes des joueurs au milieu/droite
+                # Chiffres des joueurs (fonds colorés à 100%)
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
-                    bg, border = get_colors(val)
+                    bg, text_color = get_colors(val)
                     
                     with cols_data[idx + 1]:
                         st.markdown(f"""
                             <div style='text-align: center; padding: 4px 0;'>
-                                <span style='display: inline-block; background-color: #0d1117; border: 2px solid {border}; color: white; padding: 6px 18px; border-radius: 6px; font-weight: bold; font-size: 18px; min-width: 50px; box-shadow: inset 0 0 10px {bg};'>
+                                <span style='display: inline-block; background-color: {bg}; color: {text_color}; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; border: 1px solid rgba(255,255,255,0.1); text-align: center;'>
                                     {val}
                                 </span>
                             </div>
