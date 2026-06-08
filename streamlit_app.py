@@ -113,31 +113,97 @@ with tab1:
         st.dataframe(filtered_df[cols_to_show], use_container_width=True)
 
 # 2. PROFIL JOUEUR
+# 2. PROFIL JOUEUR
 with tab2:
-    st.subheader("Analyse d'un joueur")
+    st.subheader("👤 Fiche d'identité & Profil du Joueur")
     player_list = filtered_df[player_col].unique() if player_col in filtered_df.columns else []
     
     if len(player_list) > 0:
         selected_player = st.selectbox("Choisir un joueur", player_list)
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
         
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.markdown(f"### {p_data[player_col]}")
-            st.markdown(f"**Âge :** {p_data[age_col]} ans")
-            if 'Équipe' in p_data: st.markdown(f"**Club :** {p_data['Équipe']}")
-            if 'M' in p_data: st.markdown(f"**Note Moyenne (M) :** {round(float(p_data['M']), 2)}")
+        # --- BLOC CARTE D'IDENTITÉ (Inspiré de ta capture d'écran) ---
+        p_club = p_data['Équipe'] if 'Équipe' in p_data else "Non défini"
+        p_role = p_data['Rôle Majeur'] if 'Rôle Majeur' in p_data else "Milieu"
+        p_note = round(float(p_data['M']), 2) if 'M' in p_data else "-"
+        
+        # Simulation/Récupération des données secondaires (tu pourras les mapper sur tes vraies colonnes si tu les as)
+        p_taille = p_data['Taille'] if 'Taille' in p_data else "1m80"
+        p_pied = p_data['Pied'] if 'Pied' in p_data else "Droit"
+        p_valeur = p_data['Valeur'] if 'Valeur' in p_data else "25 M €"
+        p_saison = "2025/2026"
+        
+        id_col1, id_col2 = st.columns([1.2, 2])
+        
+        # Bloc Gauche : Photo + Infos Principales
+        with id_col1:
+            st.markdown(f"""
+                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;'>
+                    <div style='width: 110px; height: 110px; border-radius: 50%; background-color: #0d1117; border: 2px solid #00BFFF; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;'>
+                        <span style='font-size: 50px;'>🏃‍♂️</span>
+                    </div>
+                    <div style='font-size: 24px; font-weight: bold; color: #ffffff; margin-bottom: 5px;'>{str(p_data[player_col]).upper()}</div>
+                    <div style='font-size: 16px; font-weight: bold; color: #FF4D4D; margin-bottom: 15px;'>⚽ {p_club}</div>
+                    <div style='background-color: #0d1117; border: 1px solid #30363d; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #4CD964; font-weight: bold;'>
+                        {p_role}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
             
-        with col2:
-            st.write("### Centiles par caractéristique")
-            for c in stats_cols:
-                c_centile = f'{c} (Centile)'
-                if c_centile in p_data:
-                    val = p_data[c_centile]
-                    color = get_colors(val)
-                    label_clean = stats_mapping.get(c, c)
+        # Bloc Droite : Grille des caractéristiques secondaires
+        with id_col2:
+            st.markdown(f"""
+                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; height: 100%;'>
+                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 15px;'>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Âge</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>🎂 {p_data[age_col]} ans</div>
+                        </div>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Note Moyenne</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📈 {p_note}</div>
+                        </div>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Taille</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📏 {p_taille}</div>
+                        </div>
+                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Pied Fort</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>👟 {p_pied}</div>
+                        </div>
+                        <div style='padding-top: 5px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Valeur Marchande</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>💰 {p_valeur}</div>
+                        </div>
+                        <div style='padding-top: 5px;'>
+                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Saison</div>
+                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>⏳ {p_saison}</div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
+        # --- SECTION DES STATS / CENTILES ---
+        st.write("### 📊 Centiles par caractéristique")
+        
+        # Organisation des stats sur 2 colonnes pour un rendu plus compact et lisible
+        stat_col1, stat_col2 = st.columns(2)
+        half = len(stats_cols) // 2 + (1 if len(stats_cols) % 2 != 0 else 0)
+        
+        for idx, c in enumerate(stats_cols):
+            c_centile = f'{c} (Centile)'
+            if c_centile in p_data:
+                val = p_data[c_centile]
+                color = get_colors(val)
+                label_clean = stats_mapping.get(c, c)
+                
+                target_col = stat_col1 if idx < half else stat_col2
+                
+                with target_col:
                     st.markdown(f"""
-                        <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
+                        <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;'>
                             <div style='font-weight:bold; color:#ffffff; font-size:14px;'>{label_clean}</div>
                             <div style='background-color:#0d1117; border: 2px solid {color}; padding:4px 12px; border-radius:4px; min-width:40px; text-align:center; font-weight:bold; font-size:16px; color:{color} !important;'>
                                 {val}
