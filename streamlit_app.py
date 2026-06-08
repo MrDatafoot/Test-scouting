@@ -6,8 +6,11 @@ import plotly.express as px
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection CSS globale pour l'application et le style "FMInside"
+# Injection CSS globale et script de tri par clic direct (Sortable)
 st.markdown("""
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
+
     <style>
         .stApp {
             background-color: #0d1117 !important;
@@ -35,10 +38,29 @@ st.markdown("""
             padding: 12px 10px;
             text-align: center;
             border-bottom: 2px solid #30363d;
+            cursor: pointer; /* Indique que c'est cliquable */
+            user-select: none;
+        }
+        .fm-th:hover {
+            color: #ffffff;
+            background-color: #21262d;
         }
         .fm-th-left {
             text-align: left;
         }
+        
+        /* Flèches indicatrices de tri */
+        .fm-th[aria-sort="ascending"]::after {
+            content: " ▲";
+            font-size: 9px;
+            color: #00BFFF;
+        }
+        .fm-th[aria-sort="descending"]::after {
+            content: " ▼";
+            font-size: 9px;
+            color: #00BFFF;
+        }
+
         .fm-tr {
             background-color: #161b22;
             border-bottom: 1px solid #21262d;
@@ -142,16 +164,16 @@ except Exception as e:
     st.error(f"Erreur lors du chargement du fichier MILIEUX.ods : {e}")
     st.stop()
 
-# Code couleur corrigé pour éliminer les cercles gris sur les décimales
+# Code couleur
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val < 11: return '#8A2BE2', '#ffffff'       # Violet
-        elif 11 <= val < 30: return '#FF4D4D', '#ffffff'    # Rouge
-        elif 30 <= val < 50: return '#D35400', '#ffffff'    # Orange
-        elif 50 <= val < 70: return '#FFFF4D', '#0d1117'    # Jaune
-        elif 70 <= val < 90: return '#4CD964', '#0d1117'    # Vert
-        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'  # Bleu
+        if 0 <= val < 11: return '#8A2BE2', '#ffffff'       
+        elif 11 <= val < 30: return '#FF4D4D', '#ffffff'    
+        elif 30 <= val < 50: return '#D35400', '#ffffff'    
+        elif 50 <= val < 70: return '#FFFF4D', '#0d1117'    
+        elif 70 <= val < 90: return '#4CD964', '#0d1117'    
+        elif 90 <= val <= 100: return '#00BFFF', '#0d1117'  
     except:
         pass
     return '#444444', '#ffffff'
@@ -168,33 +190,21 @@ try:
 except:
     filtered_df = df.copy()
 
+# Tri initial par note moyenne décroissante
+display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
+
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ONGLET : BASE DE DONNÉES
+# 1. ONGLET : BASE DE DONNÉES (TRI INTERACTIF AU CLIC)
 with tab1:
     st.subheader("Base globale des joueurs")
-    
-    # Options de tri dynamiques
-    sort_options_labels = ["NOTE MOYENNE"] + list(stats_mapping.values())
-    sort_mapping = {"NOTE MOYENNE": "Note_Moyenne_Stats"}
-    for k, v in stats_mapping.items():
-        sort_mapping[v] = f"{k} (Centile)"
-        
-    sort_col1, sort_col2 = st.columns([2, 1])
-    with sort_col1:
-        selected_sort_label = st.selectbox("Trier la liste par :", sort_options_labels, index=0)
-    with sort_col2:
-        sort_order = st.radio("Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
-        
-    ascending_bool = (sort_order == "Croissant (Min → Max)")
-    actual_sort_column = sort_mapping[selected_sort_label]
-    
-    # Application du tri choisi par l'utilisateur
-    display_df = filtered_df.sort_values(by=actual_sort_column, ascending=ascending_bool)
+    st.caption("💡 Cliquez sur le nom d'une colonne (Note Moyenne, Création, etc.) pour trier directement la liste.")
     
     if len(display_df) > 0:
-        html_table = "<table class='fm-table'>"
+        # Ajout d'un ID 'fmin-table' pour que le script sache quelle table cibler
+        html_table = "<table class='fm-table' id='fmin-table'>"
         html_table += "<thead><tr>"
+        # data-sort-default pousse le premier tri par défaut
         html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th>"
         html_table += "<th class='fm-th'>Âge</th>"
         html_table += "<th class='fm-th'>Note Moyenne</th>"
@@ -212,8 +222,9 @@ with tab1:
             bg_note, text_note = get_colors(p_note)
             
             html_table += "<tr class='fm-tr'>"
+            # data-sort permet au script JavaScript de trier sur le texte en MAJUSCULE
             html_table += f"""
-            <td class='fm-td fm-td-left'>
+            <td class='fm-td fm-td-left' data-sort='{p_name}'>
                 <div class='fm-player-cell'>
                     <div class='fm-avatar'>🏃‍♂️</div>
                     <div>
@@ -224,17 +235,29 @@ with tab1:
             </td>
             """
             html_table += f"<td class='fm-td' style='font-weight: 500;'>{p_age}</td>"
-            html_table += f"<td class='fm-td'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
+            html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
             
             for c in stats_cols:
                 val = row[f"{c} (Centile)"]
                 bg_c, text_c = get_colors(val)
-                html_table += f"<td class='fm-td'><span class='fm-badge' style='background-color: {bg_c}; color: {text_c};'>{val}</span></td>"
+                html_table += f"<td class='fm-td' data-sort='{val}'><span class='fm-badge' style='background-color: {bg_c}; color: {text_c};'>{val}</span></td>"
                 
             html_table += "</tr>"
             
         html_table += "</tbody></table>"
-        st.markdown(html_table, unsafe_allow_html=True)
+        
+        # Ce petit script s'active dès que le tableau est affiché et gère les clics
+        js_script = """
+        <script>
+            setTimeout(function() {
+                new Tablesort(document.getElementById('fmin-table'), {
+                    descending: true
+                });
+            }, 500);
+        </script>
+        """
+        
+        st.markdown(html_table + js_script, unsafe_allow_html=True)
     else:
         st.warning("Aucun joueur trouvé avec les filtres sélectionnés.")
 
@@ -321,8 +344,6 @@ with tab2:
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-    else:
-        st.write("Aucun joueur disponible.")
 
 # 3. ONGLET : COMPARATEUR
 with tab3:
