@@ -5,14 +5,14 @@ import numpy as np
 # Configuration de la page
 st.set_page_config(page_title="Scouting Milieux de Terrain", layout="wide")
 
-# Injection de CSS pour basculer l'application en mode sombre "gaming" comme le visuel
+# Injection de CSS pour basculer l'application en mode sombre "gaming"
 st.markdown("""
     <style>
         .stApp {
             background-color: #0d1117;
         }
         h1, h2, h3, p, span, label {
-            color: #ffffff !important;
+            color: #ffffff;
         }
         .stTabs [data-baseweb="tab"] {
             color: #888888;
@@ -67,7 +67,7 @@ except Exception as e:
     st.error(f"Erreur lors du traitement du fichier : {e}")
     st.stop()
 
-# Palette de couleurs uniques pour les bordures et les textes (Style modèle d'origine)
+# Code couleur unique pour bordure et texte
 def get_colors(val):
     try:
         val = float(val)
@@ -142,11 +142,11 @@ with tab2:
                     st.markdown(f"""
                         <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;'>
                             <span style='font-weight:bold; color:#fff; font-size:14px;'>{label_clean}</span>
-                            <span style='background-color:#0d1117; color:{color}; border: 2px solid {color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
+                            <span style='background-color:#0d1117; color:{color} !important; border: 2px solid {color}; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:16px; min-width:40px; text-align:center;'>{val}</span>
                         </div>
                     """, unsafe_allow_html=True)
 
-# 3. COMPARATEUR (STYLE SUR-MESURE)
+# 3. COMPARATEUR (BOÎTE NÉON AVEC TEXTE COUVERT ET AJUSTÉ)
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
@@ -157,7 +157,6 @@ with tab3:
         if len(selected_players) >= 2:
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # En-tête avec titre "COMPARAISON STATISTIQUE" calqué sur le style des joueurs
             cols_header = st.columns([2] + [2] * len(selected_players))
             with cols_header[0]:
                 st.markdown("""
@@ -178,25 +177,23 @@ with tab3:
             
             st.markdown("<hr style='border-color: #30363d;'>", unsafe_allow_html=True)
             
-            # Affichage des lignes de statistiques
             for c in stats_cols:
                 cols_data = st.columns([2] + [2] * len(selected_players))
                 label_clean = stats_mapping.get(c, c)
                 
-                # Nom de la statistique à gauche
                 with cols_data[0]:
                     st.markdown(f"<div style='padding: 12px 0; font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>", unsafe_allow_html=True)
                 
-                # Chiffres des joueurs (Style Contour Néon + Texte de la même couleur)
                 for idx, p_name in enumerate(selected_players):
                     p_data = df[df[player_col] == p_name].iloc[0]
                     val = p_data[f'{c} (Centile)']
                     color = get_colors(val)
                     
                     with cols_data[idx + 1]:
+                        # Utilisation de color: {color} !important dans le span pour écraser le blanc général
                         st.markdown(f"""
                             <div style='text-align: center; padding: 4px 0;'>
-                                <span style='display: inline-block; background-color: #0d1117; border: 2px solid {color}; color: {color}; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; text-align: center;'>
+                                <span style='display: inline-block; background-color: #0d1117; border: 2px solid {color}; color: {color} !important; padding: 6px 0; border-radius: 6px; font-weight: bold; font-size: 18px; width: 65px; text-align: center;'>
                                     {val}
                                 </span>
                             </div>
