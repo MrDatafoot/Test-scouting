@@ -30,20 +30,19 @@ def load_and_process_data():
     if "Unnamed" in df.columns[0] or df.columns[0] == "A":
         df.rename(columns={df.columns[0]: "Âge"}, inplace=True)
     
-    # LA LIGNE CORRIGÉE ICI :
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     age_col = "Âge"
     
-    # Mapping des colonnes réelles vers les noms propres du visuel
+    # Mapping mis à jour sans la catégorie "CENTRES"
     stats_mapping = {
         'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 
-        'CREA': 'CRÉATION', 'CENT': 'CENTRES', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
+        'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 
         'PERC': 'PERCUSSION', 'ENGA': 'ENGAGEMENT', 'RECU': 'RÉCUPÉRATION', 'DEFE': 'UN CONTRE UN', 
         'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'
     }
     
-    # ORDRE STRICT RESPECTANT TON TABLEAU (avec CENTRES entre CRÉATION et CONSTRUCTION)
-    ordered_keys = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CENT', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
+    # Ordre strict mis à jour (sans 'CENT')
+    ordered_keys = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
     stats_cols = [c for c in ordered_keys if c in df.columns]
     
     roles_cols = [c for c in ['SL', 'BB', 'MN', 'ST', 'RC'] if c in df.columns]
@@ -53,7 +52,7 @@ def load_and_process_data():
     else:
         df['Rôle Majeur'] = "Non défini"
         
-    # Calcul des centiles et de la note moyenne basée sur les centiles
+    # Calcul des centiles et de la note moyenne
     centile_cols_generated = []
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -61,7 +60,6 @@ def load_and_process_data():
         df[centile_name] = (abs((df[col] / 362) - 1) * 100).round().astype(int)
         centile_cols_generated.append(centile_name)
     
-    # Calcul de la vraie NOTE MOYENNE (Moyenne de toutes les notes des catégories générées)
     if centile_cols_generated:
         df['Note_Moyenne_Stats'] = df[centile_cols_generated].mean(axis=1).round(1)
     else:
@@ -110,18 +108,37 @@ tab1, tab2, tab3 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔�
 # 1. BASE DE DONNÉES
 with tab1:
     st.subheader("Base globale des joueurs")
-    cols_to_show = [player_col, age_col]
-    if 'Équipe' in df.columns: cols_to_show.append('Équipe')
-    cols_to_show.append('Note_Moyenne_Stats')
     
+    # Colonnes de base à afficher
+    base_cols = [player_col, age_col]
+    if 'Équipe' in df.columns: 
+        base_cols.append('Équipe')
+    base_cols.append('Note_Moyenne_Stats')
+    
+    # Liste ordonnée des colonnes centiles réelles
     centile_cols = [f'{c} (Centile)' for c in stats_cols]
-    cols_to_show += centile_cols
-    cols_to_show = [c for c in cols_to_show if c in filtered_df.columns or c == 'Note_Moyenne_Stats']
+    all_cols_to_show = base_cols + centile_cols
     
-    if centile_cols:
-        st.dataframe(filtered_df[cols_to_show].style.map(color_centiles, subset=[c for c in centile_cols if c in cols_to_show]), use_container_width=True)
-    else:
-        st.dataframe(filtered_df[cols_to_show], use_container_width=True)
+    # Filtrer uniquement les colonnes existantes
+    existing_cols = [c for c in all_cols_to_show if c in filtered_df.columns]
+    
+    # Création d'un DataFrame de visualisation pour renommer proprement les en-têtes
+    view_df = filtered_df[existing_cols].copy()
+    
+    # Renommer les colonnes de "UTIL (Centile)" vers "MINUTES" etc.
+    rename_dict = {'Note_Moyenne_Stats': 'NOTE MOYENNE'}
+    for c in stats_cols:
+        if f'{c} (Centile)' in view_df.columns:
+            rename_dict[f'{c} (Centile)'] = stats_mapping[c]
+    view_df.rename(columns=rename_dict, inplace=True)
+    
+    # Récupérer les nouveaux noms pour appliquer les styles colorés sur les centiles uniquement
+    styled_columns = [stats_mapping[c] for c in stats_cols if stats_mapping[c] in view_df.columns]
+    
+    st.dataframe(
+        view_df.style.map(color_centiles, subset=styled_columns), 
+        use_container_width=True
+    )
 
 # 2. PROFIL JOUEUR
 with tab2:
@@ -132,170 +149,9 @@ with tab2:
         selected_player = st.selectbox("Choisir un joueur", player_list)
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
         
-        # --- BLOC CARTE D'IDENTITÉ ---
         p_club = p_data['Équipe'] if 'Équipe' in p_data else "Non défini"
         p_role = p_data['Rôle Majeur'] if 'Rôle Majeur' in p_data else "Milieu"
-        
-        # Récupération de la VRAIE Note Moyenne calculée sur ses catégories
         p_note = p_data['Note_Moyenne_Stats']
         
-        # Vérification dynamique des colonnes Optionnelles (Taille et Valeur)
         p_taille = p_data['Taille'] if 'Taille' in p_data else "-"
-        p_valeur = p_data['Valeur'] if 'Valeur' in p_data else "-"
-        p_saison = "2025/2026"
-        
-        id_col1, id_col2 = st.columns([1.2, 2])
-        
-        # Bloc Gauche : Photo + Infos Principales
-        with id_col1:
-            st.markdown(f"""
-                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;'>
-                    <div style='width: 110px; height: 110px; border-radius: 50%; background-color: #0d1117; border: 2px solid #00BFFF; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;'>
-                        <span style='font-size: 50px;'>🏃‍♂️</span>
-                    </div>
-                    <div style='font-size: 24px; font-weight: bold; color: #ffffff; margin-bottom: 5px;'>{str(p_data[player_col]).upper()}</div>
-                    <div style='font-size: 16px; font-weight: bold; color: #FF4D4D; margin-bottom: 15px;'>⚽ {p_club}</div>
-                    <div style='background-color: #0d1117; border: 1px solid #30363d; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #4CD964; font-weight: bold;'>
-                        {p_role}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-        # Bloc Droite : Grille des caractéristiques réelles et sécurisées
-        with id_col2:
-            st.markdown(f"""
-                <div style='background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; height: 100%;'>
-                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 15px;'>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Âge</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>🎂 {p_data[age_col]} ans</div>
-                        </div>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Note Moyenne (Stats)</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📈 {p_note} / 100</div>
-                        </div>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Taille</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>📏 {p_taille}</div>
-                        </div>
-                        <div style='border-bottom: 1px solid #30363d; padding-bottom: 8px;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Saison</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>⏳ {p_saison}</div>
-                        </div>
-                        <div style='padding-top: 5px; grid-column: span 2;'>
-                            <div style='font-size: 11px; color: #8b949e; text-transform: uppercase;'>Valeur Marchande</div>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>💰 {p_valeur}</div>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        
-        # --- SECTION DES STATS / CENTILES ---
-        st.write("### 📊 Centiles par caractéristique")
-        
-        stat_col1, stat_col2 = st.columns(2)
-        half = len(stats_cols) // 2 + (1 if len(stats_cols) % 2 != 0 else 0)
-        
-        for idx, c in enumerate(stats_cols):
-            c_centile = f'{c} (Centile)'
-            if c_centile in p_data:
-                val = p_data[c_centile]
-                color = get_colors(val)
-                label_clean = stats_mapping.get(c, c)
-                
-                target_col = stat_col1 if idx < half else stat_col2
-                
-                with target_col:
-                    st.markdown(f"""
-                        <div style='background-color: #161b22; border: 1px solid #30363d; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;'>
-                            <div style='font-weight:bold; color:#ffffff; font-size:14px;'>{label_clean}</div>
-                            <div style='background-color:#0d1117; border: 2px solid {color}; padding:4px 12px; border-radius:4px; min-width:40px; text-align:center; font-weight:bold; font-size:16px; color:{color} !important;'>
-                                {val}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-    else:
-        st.write("Aucun joueur disponible.")
-
-# 3. COMPARATEUR
-with tab3:
-    st.subheader("Comparateur de Cartes")
-    all_players = df[player_col].unique() if player_col in df.columns else []
-    
-    if len(all_players) > 1:
-        selected_players = st.multiselect("Sélectionnez les joueurs à comparer (2 à 4)", options=all_players, default=list(all_players[:2]))
-        
-        if len(selected_players) >= 2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # En-tête de comparaison
-            cols_header = st.columns([2] + [2] * len(selected_players))
-            with cols_header[0]:
-                st.markdown("""
-                    <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                        <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>COMPARAISON STATISTIQUE</div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-            for idx, p_name in enumerate(selected_players):
-                p_club = df[df[player_col] == p_name]['Équipe'].values[0] if 'Équipe' in df.columns else ""
-                with cols_header[idx + 1]:
-                    st.markdown(f"""
-                        <div style='background-color: #161b22; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d; min-height: 68px; display: flex; flex-direction: column; justify-content: center;'>
-                            <div style='font-size: 18px; font-weight: bold; color: #ffffff;'>{p_name.upper()}</div>
-                            <div style='font-size: 11px; color: #8b949e;'>{p_club}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-            
-            st.markdown("<hr style='border-color: #30363d;'>", unsafe_allow_html=True)
-            
-            # Ligne spéciale pour la Note Moyenne Générée
-            cols_note = st.columns([2] + [2] * len(selected_players))
-            with cols_note[0]:
-                st.markdown("<div style='padding: 12px 0; font-size: 15px; font-weight: bold; color: #00BFFF; letter-spacing: 0.5px;'>NOTE MOYENNE (STATS)</div>", unsafe_allow_html=True)
-            for idx, p_name in enumerate(selected_players):
-                p_data = df[df[player_col] == p_name].iloc[0]
-                val_note = p_data['Note_Moyenne_Stats']
-                color_note = get_colors(val_note)
-                with cols_note[idx + 1]:
-                    st.markdown(f"""
-                        <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
-                            <div style='background-color: #0d1117; border: 2px solid {color_note}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 18px; color: {color_note} !important;'>
-                                {val_note}
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-            st.markdown("<hr style='border-color: #30363d; opacity: 0.5;'>", unsafe_allow_html=True)
-            
-            # Lignes de données standards
-            for c in stats_cols:
-                cols_data = st.columns([2] + [2] * len(selected_players))
-                label_clean = stats_mapping.get(c, c)
-                
-                with cols_data[0]:
-                    st.markdown(f"""
-                        <div style='padding: 12px 0;'>
-                            <div style='font-size: 15px; font-weight: bold; color: #e6edf2; letter-spacing: 0.5px;'>{label_clean}</div>
-                        </div>
-                    """, unsafe_allow_html=True)
-                
-                for idx, p_name in enumerate(selected_players):
-                    p_data = df[df[player_col] == p_name].iloc[0]
-                    val = p_data[f'{c} (Centile)']
-                    color = get_colors(val)
-                    
-                    with cols_data[idx + 1]:
-                        st.markdown(f"""
-                            <div style='display: flex; justify-content: center; align-items: center; padding: 4px 0;'>
-                                <div style='background-color: #0d1117; border: 2px solid {color}; padding: 6px 0; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 18px; color: {color} !important;'>
-                                    {val}
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-        else:
-            st.warning("Veuillez sélectionner au moins 2 joueurs.")
-    else:
-        st.write("Pas assez de données pour comparer.")
+        p_valeur = p_data
