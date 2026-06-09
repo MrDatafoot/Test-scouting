@@ -38,7 +38,7 @@ st.markdown("""
             padding: 12px 10px;
             text-align: center;
             border-bottom: 2px solid #30363d;
-            cursor: pointer; /* Indique que c'est cliquable */
+            cursor: pointer;
             user-select: none;
         }
         .fm-th:hover {
@@ -168,7 +168,7 @@ except Exception as e:
 def get_colors(val):
     try:
         val = float(val)
-        if 0 <= val < 11: return '#8A2BE2', '#ffffff'       
+        if 0 <= val < 11: return '#8A2BE2', '#ffffff'        
         elif 11 <= val < 30: return '#FF4D4D', '#ffffff'    
         elif 30 <= val < 50: return '#D35400', '#ffffff'    
         elif 50 <= val < 70: return '#FFFF4D', '#0d1117'    
@@ -190,39 +190,71 @@ try:
 except:
     filtered_df = df.copy()
 
-# Tri initial par note moyenne décroissante
 display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
 
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse Graphique"])
 
-# 1. ONGLET : BASE DE DONNÉES (TRI INTERACTIF AU CLIC)
 with tab1:
     st.subheader("Base globale des joueurs")
+    st.caption("💡 Cliquez sur le nom d'une colonne pour trier directement la liste.")
     
-    # Préparation du dataframe pour l'affichage (ajout des émojis et formatage)
-    df_display = display_df.copy()
-    
-    # Création d'une colonne combinée "Joueur / Club" pour garder ton style
-    df_display['JOUEUR / CLUB'] = df_display[player_col].str.upper() + " (" + df_display['Équipe'].fillna("Sans club") + ")"
-    
-    # Configuration des colonnes pour le look FMInside
-    column_config = {
-        "Note_Moyenne_Stats": st.column_config.NumberColumn("NOTE", format="%.1f"),
-        "Âge": st.column_config.NumberColumn("ÂGE"),
-    }
-    
-    # On affiche uniquement les colonnes pertinentes
-    cols_to_show = ['JOUEUR / CLUB', 'Âge', 'Note_Moyenne_Stats'] + [f"{c} (Centile)" for c in stats_cols]
-    
-    # Le composant natif qui permet le tri automatique par clic
-    st.dataframe(
-        df_display[cols_to_show],
-        use_container_width=True,
-        hide_index=True,
-        column_config=column_config
-    )
+    if len(display_df) > 0:
+        html_table = "<table class='fm-table' id='fmin-table'>"
+        html_table += "<thead><tr>"
+        html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th>"
+        html_table += "<th class='fm-th'>Âge</th>"
+        html_table += "<th class='fm-th'>Note Moyenne</th>"
+        
+        for c in stats_cols:
+            html_table += f"<th class='fm-th'>{stats_mapping[c]}</th>"
+        html_table += "</tr></thead><tbody>"
+        
+        for _, row in display_df.iterrows():
+            p_name = str(row[player_col]).upper()
+            p_age = row[age_col]
+            p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
+            p_note = row['Note_Moyenne_Stats']
+            
+            bg_note, text_note = get_colors(p_note)
+            
+            html_table += "<tr class='fm-tr'>"
+            html_table += f"""
+            <td class='fm-td fm-td-left' data-sort='{p_name}'>
+                <div class='fm-player-cell'>
+                    <div class='fm-avatar'>🏃‍♂️</div>
+                    <div>
+                        <div class='fm-player-name'>{p_name}</div>
+                        <div class='fm-player-club'>⚽ {p_club}</div>
+                    </div>
+                </div>
+            </td>
+            """
+            html_table += f"<td class='fm-td' style='font-weight: 500;'>{p_age}</td>"
+            html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='background-color: {bg_note}; color: {text_note}; width: 45px; font-size: 14px;'>{p_note}</span></td>"
+            
+            for c in stats_cols:
+                val = row[f"{c} (Centile)"]
+                bg_c, text_c = get_colors(val)
+                html_table += f"<td class='fm-td' data-sort='{val}'><span class='fm-badge' style='background-color: {bg_c}; color: {text_c};'>{val}</span></td>"
+                
+            html_table += "</tr>"
+            
+        html_table += "</tbody></table>"
+        
+        js_script = """
+        <script>
+            setTimeout(function() {
+                new Tablesort(document.getElementById('fmin-table'), {
+                    descending: true
+                });
+            }, 500);
+        </script>
+        """
+        
+        st.markdown(html_table + js_script, unsafe_allow_html=True)
+    else:
+        st.warning("Aucun joueur trouvé avec les filtres sélectionnés.")
 
-# 2. ONGLET : PROFIL JOUEUR
 with tab2:
     st.subheader("👤 Fiche d'identité & Profil du Joueur")
     player_list = filtered_df[player_col].unique() if player_col in filtered_df.columns else []
@@ -306,7 +338,6 @@ with tab2:
                         </div>
                     """, unsafe_allow_html=True)
 
-# 3. ONGLET : COMPARATEUR
 with tab3:
     st.subheader("Comparateur de Cartes")
     all_players = df[player_col].unique() if player_col in df.columns else []
@@ -356,7 +387,6 @@ with tab3:
         else:
             st.warning("Veuillez sélectionner au moins 2 joueurs.")
 
-# 4. ONGLET : ANALYSE GRAPHIQUE
 with tab4:
     st.subheader("📈 Nuage de Points Interactif - Analyse à 2 axes")
     
