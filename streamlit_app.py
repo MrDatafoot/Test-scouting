@@ -321,12 +321,12 @@ with tab2:
         
         # Configuration des Tiers ajustée sans coupures
         tiers = [
-            {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
-            {"y0": 50, "y1": 70, "y_text": 60, "title": "-- CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
-            {"y0": 15, "y1": 30, "y_text": 22.5, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
+            {"y0": 90, "y1": 100, "y_text": 95, "title": " ELITE", "sub": "", "color": "#00d2ff"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": " FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
+            {"y0": 50, "y1": 70, "y_text": 60, "title": " CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y0": 30, "y1": 50, "y_text": 40, "title": " FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
+            {"y0": 15, "y1": 30, "y_text": 22.5, "title": " FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y0": 0, "y1": 15, "y_text": 7.5, "title": " CRITIQUE", "sub": "", "color": "#bf5af2"}
         ]
         
         # Dessin des lignes horizontales pointillées et légendes
