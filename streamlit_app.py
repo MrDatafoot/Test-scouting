@@ -18,7 +18,7 @@ st.markdown("""
         .stApp {
             background-color: #05070a !important;
             color: #e6edf2 !important;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', Arial, sans-serif;
         }
         
         /* Personnalisation de la barre latérale */
@@ -93,11 +93,15 @@ st.markdown("""
 
         /* Blocs de Légende de gauche */
         .perf-legend-box {
-            padding: 10px;
+            padding: 11px 10px;
             border-radius: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 9px;
             background: #0c1017;
             border: 1px solid #21262d;
+            height: 66px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .legend-title { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
         .legend-sub { font-size: 11px; color: #8b949e; margin-top: 2px; }
@@ -243,7 +247,7 @@ with tab1:
         st.warning("Aucun joueur ne correspond aux critères.")
 
 
-# --- ONGLET 2 : PROFIL INDIVIDUEL (REPRODUCTION PARFAITE SANS CODE BLOQUÉ) ---
+# --- ONGLET 2 : PROFIL INDIVIDUEL ---
 with tab2:
     if len(filtered_df) > 0:
         player_list = sorted(filtered_df[player_col].unique())
@@ -260,7 +264,6 @@ with tab2:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- AUCUN ESPACE DE DÉBUT DE LIGNE ICI POUR ÉVITER LE BUG DE CODE MARKOOWN ---
         top_dashboard_html = f"""
 <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 15px; margin-bottom: 25px;">
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: flex; gap: 15px; align-items: center;">
@@ -287,7 +290,6 @@ with tab2:
 """
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
         
-        # --- BLOC INFERIEUR : PERFORMANCES STATISTIQUES ---
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
         perf_col1, perf_col2 = st.columns([1, 3.8])
@@ -312,19 +314,36 @@ with tab2:
                 x=categories, y=values,
                 marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
                 text=values, textposition='outside',
-                textfont=dict(size=12, color='#ffffff', family='Inter', weight='bold'),
+                textfont=dict(size=12, color='#ffffff', family='Arial, Helvetica, sans-serif'),
                 hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
             ))
             
+            # Utilisation de layer='below' pour faire passer les pointillés derrière les barres
             threshold_lines = [(90, "#00d2ff"), (70, "#00ff66"), (50, "#ffd60a"), (30, "#ff9f0a"), (15, "#ff453a")]
             for level, color in threshold_lines:
-                fig_bars.add_shape(type="line", x0=-0.5, x1=len(categories)-0.5, y0=level, y1=level, line=dict(color=color, width=1, dash="dot"))
+                fig_bars.add_shape(
+                    type="line", x0=-0.5, x1=len(categories)-0.5, y0=level, y1=level, 
+                    line=dict(color=color, width=1, dash="dot"),
+                    layer='below'
+                )
             
             fig_bars.update_layout(
                 plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=25, b=10, l=10, r=10), height=380, showlegend=False,
-                xaxis=dict(tickfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'), gridcolor='rgba(0,0,0,0)', fixedrange=True),
-                yaxis=dict(range=[0, 110], gridcolor='#161b22', tickvals=[0, 15, 30, 50, 70, 90, 100], tickfont=dict(color='#8b949e', size=10), fixedrange=True)
+                margin=dict(t=25, b=10, l=10, r=10), 
+                height=455, # Calibré précisément sur la hauteur totale des conteneurs HTML de gauche
+                showlegend=False,
+                xaxis=dict(
+                    tickfont=dict(color='#ffffff', size=11, family='Arial, Helvetica, sans-serif'), 
+                    gridcolor='rgba(0,0,0,0)', 
+                    fixedrange=True
+                ),
+                yaxis=dict(
+                    range=[0, 110], 
+                    gridcolor='#161b22', 
+                    tickvals=[0, 15, 30, 50, 70, 90, 100], 
+                    tickfont=dict(color='#8b949e', size=10, family='Arial, Helvetica, sans-serif'), 
+                    fixedrange=True
+                )
             )
             st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
