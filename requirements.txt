@@ -1,5 +1,6 @@
 streamlit
 pandas
-odfpy
-plotly
 openpyxl
+plotly
+odfpy
+streamlit-ag-grid
