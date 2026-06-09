@@ -163,7 +163,7 @@ def get_fm_color(val):
 
 
 # --- INTERFACE SIDEBAR ---
-st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ FM SCOUTING</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ DATA'Foot</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
 search_query = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().lower()
