@@ -284,11 +284,10 @@ with tab2:
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
-        # --- CONSTRUCTEUR DU GRAPHIQUE INTEGRÉ SÉCURISÉ ---
-        categories = [""] + [stats_mapping[c].upper().replace(" ", "<br>") for c in stats_cols]
+        # --- CONSTRUCTEUR DU GRAPHIQUE INTEGRÉ ---
+        categories = [stats_mapping[c].upper().replace(" ", "<br>") for c in stats_cols]
         
-        # Traitement sécurisé des scores centiles pour parer aux cellules 'X' ou NaN
-        values = [0]
+        values = []
         for c in stats_cols:
             raw_val = p_data.get(f"{c} (Centile)", 0)
             try:
@@ -297,19 +296,19 @@ with tab2:
                 clean_val = 0
             values.append(clean_val)
             
-        colors = ["rgba(0,0,0,0)"] + [get_fm_color(v) for v in values[1:]]
-        text_labels = [""] + [str(v) for v in values[1:]]
+        colors = [get_fm_color(v) for v in values]
+        text_labels = [str(v) for v in values]
         
         fig_bars = go.Figure()
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
             marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
             text=text_labels, textposition='outside',
-            textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif'),
+            textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif', weight='bold'),
             hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
         ))
         
-        # Blocs géométriques stables pour la légende unifiée
+        # Configuration des Tiers (Paliers de notes style Photoshop/FM)
         tiers = [
             {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
             {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "AU-DESSUS DE LA MOYENNE", "color": "#00ff66"},
@@ -319,47 +318,31 @@ with tab2:
             {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
         ]
         
-        # Injection sécurisée des formes
+        # Dessin sécurisé des lignes pointillées et de la légende latérale gauche
         for t in tiers:
-            try:
-                y0_f = float(t["y0"])
-                y1_f = float(t["y1"])
-                
-                # Arrière-plan du bloc de texte à gauche
+            # Ligne pointillée horizontale sur toute la largeur du repère
+            if t["y0"] > 0:
                 fig_bars.add_shape(
-                    type="rectangle", xref="paper", yref="y",
-                    x0=0.0, x1=0.09, y0=y0_f, y1=y1_f,
-                    fillcolor="#0c1017", line=dict(color="#21262d", width=1), layer="below"
+                    type="line", xref="paper", yref="y",
+                    x0=0, x1=1, y0=t["y0"], y1=t["y0"],
+                    line=dict(color=t["color"], width=1, dash="dot"), layer='below'
                 )
-                # Petite barre d'accentuation couleur
-                fig_bars.add_shape(
-                    type="rectangle", xref="paper", yref="y",
-                    x0=0.0, x1=0.004, y0=y0_f, y1=y1_f,
-                    fillcolor=t["color"], line=dict(width=0), layer="below"
-                )
-                
-                t_html = f"<b style='color:{t['color']}; font-size:11px; font-family:\'Inter\', sans-serif;'>{t['title']}</b>"
-                if t["sub"]:
-                    t_html += f"<br><span style='color:#8b949e; font-size:8px; font-weight:700;'>{t['sub']}</span>"
-                
-                fig_bars.add_annotation(
-                    xref="paper", yref="y", x=0.008, y=float(t["y_text"]), text=t_html,
-                    showarrow=False, xanchor="left", yanchor="middle"
-                )
-                
-                # Lignes pointillées de rappel
-                if y0_f > 0:
-                    fig_bars.add_shape(
-                        type="line", xref="paper", yref="y",
-                        x0=0.09, x1=1.0, y0=y0_f, y1=y0_f, 
-                        line=dict(color=t["color"], width=1, dash="dot"), layer='below'
-                    )
-            except Exception:
-                continue
+            
+            # Injection de la légende HTML sur le flanc gauche (Marge) via xref="paper" négatif
+            t_html = f"<b style='color:{t['color']}; font-size:11px; font-family:\'Inter\', sans-serif;'>{t['title']}</b>"
+            if t["sub"]:
+                t_html += f"<br><span style='color:#8b949e; font-size:8px; font-weight:700;'>{t['sub']}</span>"
+            
+            fig_bars.add_annotation(
+                xref="paper", yref="y", 
+                x=-0.02, y=float(t["y_text"]), 
+                text=t_html,
+                showarrow=False, xanchor="right", yanchor="middle"
+            )
 
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=10, r=10), 
+            margin=dict(t=30, b=40, l=120, r=20),  # Marge gauche élargie (120px) pour intégrer proprement les étiquettes
             height=535,
             showlegend=False,
             xaxis=dict(
