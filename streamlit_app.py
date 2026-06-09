@@ -14,7 +14,7 @@ st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
 
     <style>
-        /* Thème sombre Premium Photoshop */
+        /* Thème sombre Premium */
         .stApp {
             background-color: #05070a !important;
             color: #e6edf2 !important;
@@ -109,7 +109,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- 1. CHARGEMENT ET TRAITEMENT DES DONNÉES ---
+# --- CHARGEMENT ET TRAITEMENT DES DONNÉES ---
 @st.cache_data
 def load_and_process_data():
     df = pd.read_excel("MILIEUX.ods")
@@ -161,12 +161,11 @@ except Exception as e:
     st.stop()
 
 
-# --- CODES COULEURS ISSUS DE LA MAQUETTE ---
 def get_fm_color(val):
     try:
         val = float(val)
         if val >= 90: return '#00d2ff'     # ELITE (Cyan)
-        elif val >= 70: return '#00ff66'   # FORT (Vert flashy)
+        elif val >= 70: return '#00ff66'   # FORT (Vert)
         elif val >= 50: return '#ffd60a'   # CORRECT (Jaune)
         elif val >= 30: return '#ff9f0a'   # FRAGILE (Orange)
         elif val >= 15: return '#ff453a'   # FAIBLE (Rouge)
@@ -230,7 +229,7 @@ with tab1:
             p_note = row['Note_Moyenne_Stats']
             c_note = get_fm_color(p_note)
             
-            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left' data-sort='{p_name}'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#8b949e;'>⚽ {p_club}</div></div></div></td>"
+            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left' data-sort='{p_name}'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#8b949e;'>🛡️ {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
             html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{int(round(p_note))}</span></td>"
@@ -270,16 +269,16 @@ with tab2:
 <div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; padding: 12px; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;">🏃‍♂️</div>
 <div>
 <div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height:1.1;">{p_name_upper}</div>
-<div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px;">⚽ {p_club_str}</div>
-<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">🛡️ {p_role_str}</div>
+<div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px;">🛡️ {p_club_str}</div>
+<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">⚙️ {p_role_str}</div>
 </div>
 </div>
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
 <div style="color:#8b949e;">🎂 AGE : <span style="color:#fff; font-weight:700;">{p_data['Âge']} ANS</span></div>
 <div style="color:#8b949e;">🔍 SOURCE : <span style="color:#fff; font-weight:700;">WYSCOUT</span></div>
-<div style="color:#8b949e;">📏 TAILLE : <span style="color:#fff; font-weight:700;">1M82</span></div>
+<div style="color:#8b949e;">📏 TAILLE : <span style="color:#fff; font-weight:700;">X</span></div>
 <div style="color:#8b949e;">⏳ SAISON : <span style="color:#fff; font-weight:700;">2025/2026</span></div>
-<div style="color:#8b949e;">🦶 PIED FORT : <span style="color:#fff; font-weight:700;">DROIT</span></div>
+<div style="color:#8b949e;">🦶 PIED FORT : <span style="color:#fff; font-weight:700;">X</span></div>
 <div style="color:#8b949e;">📅 DATE : <span style="color:#fff; font-weight:700;">{current_date_str}</span></div>
 </div>
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -314,11 +313,10 @@ with tab2:
                 x=categories, y=values,
                 marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
                 text=values, textposition='outside',
-                textfont=dict(size=12, color='#ffffff', family='Arial, Helvetica, sans-serif'),
+                textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif'),
                 hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
             ))
             
-            # Utilisation de layer='below' pour faire passer les pointillés derrière les barres
             threshold_lines = [(90, "#00d2ff"), (70, "#00ff66"), (50, "#ffd60a"), (30, "#ff9f0a"), (15, "#ff453a")]
             for level, color in threshold_lines:
                 fig_bars.add_shape(
@@ -329,11 +327,11 @@ with tab2:
             
             fig_bars.update_layout(
                 plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=25, b=10, l=10, r=10), 
-                height=455, # Calibré précisément sur la hauteur totale des conteneurs HTML de gauche
+                margin=dict(t=0, b=10, l=10, r=10), 
+                height=535, # Hauteur recalibrée pour couvrir parfaitement la grille des 6 légendes de gauche
                 showlegend=False,
                 xaxis=dict(
-                    tickfont=dict(color='#ffffff', size=11, family='Arial, Helvetica, sans-serif'), 
+                    tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif'), 
                     gridcolor='rgba(0,0,0,0)', 
                     fixedrange=True
                 ),
@@ -341,7 +339,7 @@ with tab2:
                     range=[0, 110], 
                     gridcolor='#161b22', 
                     tickvals=[0, 15, 30, 50, 70, 90, 100], 
-                    tickfont=dict(color='#8b949e', size=10, family='Arial, Helvetica, sans-serif'), 
+                    tickfont=dict(color='#8b949e', size=10, family='Inter, Arial, sans-serif'), 
                     fixedrange=True
                 )
             )
@@ -367,7 +365,7 @@ with tab3:
             p_club = p_row['Équipe'] if pd.notna(p_row['Équipe']) else "Sans club"
             p_role = p_row['Rôle Majeur']
             with cols_header[idx + 1]:
-                st.markdown(f"<div style='background-color:#0c1017; padding:10px; border-radius:6px; text-align:center; border:1px solid #21262d; min-height:75px;'><div style='font-size:14px; font-weight:900; color:#fff;'>{p_name.upper()}</div><div style='font-size:11px; color:#00d2ff; font-weight:600;'>{p_role}</div><div style='font-size:10px; color:#8b949e;'>⚽ {p_club}</div></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background-color:#0c1017; padding:10px; border-radius:6px; text-align:center; border:1px solid #21262d; min-height:75px;'><div style='font-size:14px; font-weight:900; color:#fff;'>{p_name.upper()}</div><div style='font-size:11px; color:#00d2ff; font-weight:600;'>{p_role}</div><div style='font-size:10px; color:#8b949e;'>🛡️ {p_club}</div></div>", unsafe_allow_html=True)
         
         cols_note = st.columns([2.5] + [2] * len(selected_players))
         with cols_note[0]:
@@ -393,7 +391,7 @@ with tab3:
         st.warning("Sélectionnez au moins 2 joueurs.")
 
 
-# --- ONGLET 4 : ANALYSE GRAPH_CROSS ---
+# --- ONGLET 4 : ANALYSE QUADRANT ---
 with tab4:
     st.subheader("📈 Graphique d'Analyse à Deux Axes (Cross-Analyse)")
     reverse_mapping = {v: k for k, v in stats_mapping.items()}
