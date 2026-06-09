@@ -308,19 +308,18 @@ with tab2:
             hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
         ))
         
-        # Configuration des Tiers (Paliers de notes style Photoshop/FM)
+        # Configuration des Tiers ajustée sans coupures
         tiers = [
             {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "AU-DESSUS DE LA MOYENNE", "color": "#00ff66"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
             {"y0": 50, "y1": 70, "y_text": 60, "title": "-- CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "EN-DESSOUS DE LA MOYENNE", "color": "#ff9f0a"},
+            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
             {"y0": 15, "y1": 30, "y_text": 22.5, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
             {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
         ]
         
-        # Dessin sécurisé des lignes pointillées et de la légende latérale gauche
+        # Dessin des lignes horizontales pointillées et légendes reformatées
         for t in tiers:
-            # Ligne pointillée horizontale sur toute la largeur du repère
             if t["y0"] > 0:
                 fig_bars.add_shape(
                     type="line", xref="paper", yref="y",
@@ -328,7 +327,6 @@ with tab2:
                     line=dict(color=t["color"], width=1, dash="dot"), layer='below'
                 )
             
-            # Injection de la légende HTML sur le flanc gauche (Marge) via xref="paper" négatif
             t_html = f"<b style='color:{t['color']}; font-size:11px; font-family:\'Inter\', sans-serif;'>{t['title']}</b>"
             if t["sub"]:
                 t_html += f"<br><span style='color:#8b949e; font-size:8px; font-weight:700;'>{t['sub']}</span>"
@@ -342,8 +340,8 @@ with tab2:
 
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=120, r=20),  # Marge gauche élargie (120px) pour intégrer proprement les étiquettes
-            height=535,
+            margin=dict(t=30, b=40, l=125, r=20),  # Marge gauche optimisée
+            height=630,                            # Ajusté plus haut suivant tes repères rouges
             showlegend=False,
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'), 
