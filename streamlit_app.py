@@ -90,7 +90,7 @@ st.markdown("""
         .fm-th[aria-sort="ascending"]::after { content: " ▲"; color: #00d2ff; font-size: 10px; }
         .fm-th[aria-sort="descending"]::after { content: " ▼"; color: #00d2ff; font-size: 10px; }
 
-        /* Badges de Notes en Contour (Style demandé) */
+        /* Badges de Notes en Contour */
         .fm-badge {
             display: inline-block;
             font-weight: 700;
@@ -142,7 +142,7 @@ def load_and_process_data():
     else:
         df['Rôle Majeur'] = "Milieu"
 
-    # Lexique des caractéristiques (sans 'CENT')
+    # Lexique des caractéristiques
     stats_mapping = {
         'UTIL': 'Utilisation', 'ATTA': 'Attaque', 'FINI': 'Finition', 
         'CREA': 'Création', 'CONS': 'Construction', 'DRIB': 'Dribble', 
@@ -173,23 +173,22 @@ except Exception as e:
     st.stop()
 
 
-# --- CONFIGURATION DU CODE COULEUR STRICT ---
+# --- CONFIGURATION DU CODE COULEUR ---
 def get_fm_color(val):
     try:
         val = float(val)
-        if 90 <= val <= 100: return '#00d2ff'  # 90-100 : Bleu néon
-        elif 70 <= val < 90: return '#00ff66'  # 70-89 : Vert
-        elif 50 <= val < 70: return '#ffd60a'  # 50-69 : Jaune
-        elif 30 <= val < 50: return '#ff9f0a'  # 30-49 : Orange
-        elif 10 <= val < 30: return '#ff453a'  # 10-29 : Rouge
-        else: return '#bf5af2'                 # 0-9 : Violet
+        if 90 <= val <= 100: return '#00d2ff'  # Bleu
+        elif 70 <= val < 90: return '#00ff66'  # Vert
+        elif 50 <= val < 70: return '#ffd60a'  # Jaune
+        elif 30 <= val < 50: return '#ff9f0a'  # Orange
+        elif 10 <= val < 30: return '#ff453a'  # Rouge
+        else: return '#bf5af2'                 # Violet
     except:
         return '#4a5568'
 
 
 # --- INTERFACE SIDEBAR ---
 st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ FM SCOUTING</h2>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='color:#8b949e; font-size:12px; margin-top:0;'>Filtres de recrutement avancés</p>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
 search_query = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().lower()
@@ -214,9 +213,8 @@ if selected_roles:
 display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
 
 
-# --- STRATEGIE DES ONGLETS ---
+# --- NAVIGATION ---
 st.title("📊 Dashboard de Scouting Premium")
-st.markdown(f"**{len(display_df)}** milieux de terrain correspondent à vos critères actifs.")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "📂 Base Globale", 
@@ -248,7 +246,6 @@ with tab1:
             p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
             p_role = row['Rôle Majeur']
             p_note = row['Note_Moyenne_Stats']
-            
             c_note = get_fm_color(p_note)
             
             html_table += "<tr class='fm-tr'>"
@@ -265,7 +262,6 @@ with tab1:
             """
             html_table += f"<td class='fm-td' style='font-weight: 600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#151b23; padding:3px 8px; border-radius:4px; border:1px solid #30363d;'>{p_role}</span></td>"
-            
             html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='border: 2px solid {c_note}; color: {c_note} !important;'>{int(round(p_note))}</span></td>"
             
             for c in stats_cols:
@@ -289,17 +285,16 @@ with tab1:
         st.warning("Aucun joueur ne correspond à vos filtres actuels.")
 
 
-# --- ONGLET 2 : PROFIL INDIVIDUEL (STYLE RADAR OPTA REVISITÉ) ---
+# --- ONGLET 2 : PROFIL INDIVIDUEL (PIZZA CHART OPTA RECTIFIÉ) ---
 with tab2:
     if len(filtered_df) > 0:
         player_list = sorted(filtered_df[player_col].unique())
         selected_player = st.selectbox("🎯 Sélectionner un joueur pour analyser son profil", player_list)
         
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
-        
         st.markdown("<br>", unsafe_allow_html=True)
         
-        prof_col1, prof_col2 = st.columns([1, 2])
+        prof_col1, prof_col2 = st.columns([1, 2.2])
         
         with prof_col1:
             st.markdown(f"""
@@ -318,63 +313,72 @@ with tab2:
             """, unsafe_allow_html=True)
             
         with prof_col2:
-            # --- CRÉATION DU PIZZA CHART (STYLE OPTA ANALYST) ---
+            # --- CONSTRUIRE UN VRAI PIZZA CHART SANS CHEVAUCHEMENT (MAPPING NUMÉRIQUE 0-360°) ---
             categories = [stats_mapping[c] for c in stats_cols]
             values = [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
             colors = [get_fm_color(v) for v in values]
             
+            num_stats = len(stats_cols)
+            # On calcule des angles précis en degrés pour que Plotly ne confonde pas les largeurs
+            angles = [i * (360 / num_stats) for i in range(num_stats)]
+            width_per_sector = [360 / num_stats] * num_stats
+            
             fig_pizza = go.Figure()
             
-            # Ajout des parts de pizza pleines (Barpolar)
+            # 1. Les Secteurs Pleins (Parts de pizza)
             fig_pizza.add_trace(go.Barpolar(
                 r=values,
-                theta=categories,
-                width=[360 / len(stats_cols)] * len(stats_cols),
+                theta=angles,
+                width=width_per_sector,
                 marker=dict(
                     color=colors,
-                    opacity=0.65,
-                    line=dict(color='#0c1017', width=2)
+                    opacity=0.75,
+                    line=dict(color='#0c1017', width=2) # Ligne de séparation noire entre les parts
                 ),
                 hoverinfo='skip'
             ))
             
-            # Ajout des scores numériques au centre de chaque part (comme sur le modèle Opta)
-            # On place le texte légèrement en retrait de la pointe (ex: à 75% du rayon de la part)
-            text_positions_r = [max(v * 0.75, 12) if v > 20 else 10 for v in values]
+            # 2. Placement des notes chiffrées au milieu de chaque part
+            # On place la note à environ 55% du rayon de la part pour qu'elle soit bien centrée
+            text_positions_r = [max(v * 0.55, 12) for v in values]
             
             fig_pizza.add_trace(go.Scatterpolar(
                 r=text_positions_r,
-                theta=categories,
+                theta=angles,
                 mode='text',
                 text=[f"<b>{v}</b>" for v in values],
-                textfont=dict(size=12, color='#ffffff'),
+                textfont=dict(size=12, color='#ffffff', family='Inter'),
                 hoverinfo='skip'
             ))
             
-            # Configuration globale de la zone de graphique sombre
+            # 3. Configuration du layout polaire ultra-pro sur fond sombre
             fig_pizza.update_layout(
                 polar=dict(
                     bgcolor='#11161d',
                     radialaxis=dict(
                         visible=True,
                         range=[0, 100],
-                        gridcolor="#30363d",
+                        gridcolor="#21262d",
                         linecolor="rgba(0,0,0,0)",
                         tickvals=[20, 40, 60, 80, 100],
                         tickfont=dict(color="#8b949e", size=9),
                         ticks=""
                     ),
                     angularaxis=dict(
-                        gridcolor="#30363d",
-                        tickfont=dict(color="#ffffff", size=11),
-                        ticks=""
+                        tickvals=angles,
+                        ticktext=categories, # On remplace les degrés par le nom des caractéristiques
+                        gridcolor="#21262d",
+                        tickfont=dict(color="#ffffff", size=11, fontfamily='Inter'),
+                        ticks="",
+                        direction="clockwise",
+                        period=360
                     )
                 ),
                 showlegend=False,
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                height=420,
-                margin=dict(t=30, b=30, l=60, r=60)
+                height=450,
+                margin=dict(t=40, b=40, l=80, r=80)
             )
             
             st.plotly_chart(fig_pizza, use_container_width=True, config={'displayModeBar': False})
