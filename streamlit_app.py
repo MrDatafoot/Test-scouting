@@ -90,21 +90,6 @@ st.markdown("""
             text-align: center;
             background-color: transparent !important;
         }
-
-        /* Blocs de Légende de gauche */
-        .perf-legend-box {
-            padding: 11px 10px;
-            border-radius: 4px;
-            margin-bottom: 9px;
-            background: #0c1017;
-            border: 1px solid #21262d;
-            height: 66px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .legend-title { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
-        .legend-sub { font-size: 11px; color: #8b949e; margin-top: 2px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -218,7 +203,7 @@ with tab1:
         html_table = "<table class='fm-table' id='fmin-table'><thead><tr>"
         html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th><th class='fm-th'>Âge</th><th class='fm-th'>Rôle</th><th class='fm-th'>Général</th>"
         for c in stats_cols:
-            html_table += f"<th class='fm-th'>{stats_mapping[c]}</th>"
+            html_table += f"<th class='fm-th'>{stats_mapping[c].upper()}</th>"
         html_table += "</tr></thead><tbody>"
         
         for _, row in display_df.iterrows():
@@ -229,7 +214,7 @@ with tab1:
             p_note = row['Note_Moyenne_Stats']
             c_note = get_fm_color(p_note)
             
-            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left' data-sort='{p_name}'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#8b949e;'>🛡️ {p_club}</div></div></div></td>"
+            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left' data-sort='{p_name}'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
             html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{int(round(p_note))}</span></td>"
@@ -288,62 +273,80 @@ with tab2:
 </div>
 """
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
-        
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
-        perf_col1, perf_col2 = st.columns([1, 3.8])
+        # --- LOGIQUE NATIVE DU CONSTRUCTEUR GRAPHIQUE ---
+        # Ajout d'une colonne blanche au tout début (index 0) pour injecter la légende Photoshop
+        categories = [""] + [stats_mapping[c].upper().replace(" ", "<br>") for c in stats_cols]
+        values = [0] + [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
+        colors = ["rgba(0,0,0,0)"] + [get_fm_color(v) for v in values[1:]]
+        text_labels = [""] + [str(v) for v in values[1:]]
         
-        with perf_col1:
-            st.markdown("""
-                <div class="perf-legend-box" style="border-left: 4px solid #00d2ff;"><div class="legend-title" style="color: #00d2ff;">💎 ELITE</div></div>
-                <div class="perf-legend-box" style="border-left: 4px solid #00ff66;"><div class="legend-title" style="color: #00ff66;">🔼 FORT</div><div class="legend-sub">Au-dessus de la moyenne</div></div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ffd60a;"><div class="legend-title" style="color: #ffd60a;">-- CORRECT</div><div class="legend-sub">Dans la moyenne</div></div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ff9f0a;"><div class="legend-title" style="color: #ff9f0a;">⚠️ FRAGILE</div><div class="legend-sub">En-dessous de la moyenne</div></div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ff453a;"><div class="legend-title" style="color: #ff453a;">⬇️ FAIBLE</div><div class="legend-sub">À améliorer</div></div>
-                <div class="perf-legend-box" style="border-left: 4px solid #bf5af2;"><div class="legend-title" style="color: #bf5af2;">❌ CRITIQUE</div></div>
-            """, unsafe_allow_html=True)
-            
-        with perf_col2:
-            categories = [stats_mapping[c].replace(" ", "<br>") for c in stats_cols]
-            values = [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
-            colors = [get_fm_color(v) for v in values]
-            
-            fig_bars = go.Figure()
-            fig_bars.add_trace(go.Bar(
-                x=categories, y=values,
-                marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
-                text=values, textposition='outside',
-                textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif'),
-                hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
-            ))
-            
-            threshold_lines = [(90, "#00d2ff"), (70, "#00ff66"), (50, "#ffd60a"), (30, "#ff9f0a"), (15, "#ff453a")]
-            for level, color in threshold_lines:
-                fig_bars.add_shape(
-                    type="line", x0=-0.5, x1=len(categories)-0.5, y0=level, y1=level, 
-                    line=dict(color=color, width=1, dash="dot"),
-                    layer='below'
-                )
-            
-            fig_bars.update_layout(
-                plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=0, b=10, l=10, r=10), 
-                height=535, # Hauteur recalibrée pour couvrir parfaitement la grille des 6 légendes de gauche
-                showlegend=False,
-                xaxis=dict(
-                    tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif'), 
-                    gridcolor='rgba(0,0,0,0)', 
-                    fixedrange=True
-                ),
-                yaxis=dict(
-                    range=[0, 110], 
-                    gridcolor='#161b22', 
-                    tickvals=[0, 15, 30, 50, 70, 90, 100], 
-                    tickfont=dict(color='#8b949e', size=10, family='Inter, Arial, sans-serif'), 
-                    fixedrange=True
-                )
+        fig_bars = go.Figure()
+        fig_bars.add_trace(go.Bar(
+            x=categories, y=values,
+            marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
+            text=text_labels, textposition='outside',
+            textfont=dict(size=12, color='#ffffff', family='Source Sans Pro, Inter, system-ui, sans-serif'),
+            hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
+        ))
+        
+        # Configuration des structures de la légende unifiée
+        tiers = [
+            {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "AU-DESSUS DE LA MOYENNE", "color": "#00ff66"},
+            {"y0": 50, "y1": 70, "y_text": 60, "title": "-- CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "EN-DESSOUS DE LA MOYENNE", "color": "#ff9f0a"},
+            {"y0": 15, "y1": 30, "y_text": 22.5, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
+        ]
+        
+        # Injection géométrique des blocs légendes sur la zone x = 0 (première colonne)
+        for t in tiers:
+            # Fond sombre de la carte
+            fig_bars.add_shape(
+                type="rectangle", x0=-0.45, x1=0.45, y0=t["y0"], y1=t["y1"],
+                fillcolor="#0c1017", line=dict(color="#21262d", width=1), layer="below"
             )
-            st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
+            # Bordure colorée gauche signature
+            fig_bars.add_shape(
+                type="rectangle", x0=-0.45, x1=-0.41, y0=t["y0"], y1=t["y1"],
+                fillcolor=t["color"], line=dict(width=0), layer="below"
+            )
+            # Textes intégrés
+            t_html = f"<span style='color:{t['color']}; font-weight:900; font-size:12px;'>{t['title']}</span>"
+            if t["sub"]:
+                t_html += f"<br><span style='color:#8b949e; font-size:9px; font-weight:700;'>{t['sub']}</span>"
+            
+            fig_bars.add_annotation(
+                x=-0.36, y=t["y_text"], text=t_html, showarrow=False, xanchor="left", yanchor="middle",
+                font=dict(family="Source Sans Pro, Inter, system-ui, sans-serif")
+            )
+            
+            # Lignes de rappel pointillées (partent de la fin de la légende jusqu'au bout du graph)
+            if t["y0"] > 0:
+                fig_bars.add_shape(
+                    type="line", x0=0.5, x1=len(categories)-0.5, y0=t["y0"], y1=t["y0"], 
+                    line=dict(color=t["color"], width=1, dash="dot"), layer='below'
+                )
+
+        fig_bars.update_layout(
+            plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=30, b=40, l=10, r=10), 
+            height=535,
+            showlegend=False,
+            xaxis=dict(
+                tickfont=dict(color='#ffffff', size=11, fontfamily='Source Sans Pro, Inter, system-ui, sans-serif', weight='bold'), 
+                gridcolor='rgba(0,0,0,0)', fixedrange=True
+            ),
+            yaxis=dict(
+                range=[0, 115], gridcolor='#161b22', 
+                tickvals=[0, 15, 30, 50, 70, 90, 100], 
+                tickfont=dict(color='#8b949e', size=10, family='Source Sans Pro, Inter, system-ui, sans-serif'), 
+                fixedrange=True
+            )
+        )
+        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
         st.warning("Aucun joueur trouvé.")
 
@@ -381,7 +384,7 @@ with tab3:
         for c in stats_cols:
             cols_data = st.columns([2.5] + [2] * len(selected_players))
             with cols_data[0]:
-                st.markdown(f"<div style='padding:10px 10px; font-size:13px; font-weight:600; color:#c9d1d9;'>{stats_mapping[c]}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='padding:10px 10px; font-size:13px; font-weight:600; color:#c9d1d9;'>{stats_mapping[c].upper()}</div>", unsafe_allow_html=True)
             for idx, p_name in enumerate(selected_players):
                 val = df[df[player_col] == p_name].iloc[0][f'{c} (Centile)']
                 c_val = get_fm_color(val)
@@ -410,7 +413,7 @@ with tab4:
         
         fig = px.scatter(
             plot_df, x=x_col, y=y_col, text=player_col, color='Note_Moyenne_Stats',
-            color_continuous_scale='Viridis', labels={x_col: f"{x_label} (Score Centile)", y_col: f"{y_label} (Score Centile)"}
+            color_continuous_scale='Viridis', labels={x_col: f"{x_label.upper()} (Score Centile)", y_col: f"{y_label.upper()} (Score Centile)"}
         )
         fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#ffffff')))
         fig.update_layout(
