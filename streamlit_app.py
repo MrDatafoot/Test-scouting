@@ -119,11 +119,12 @@ def load_and_process_data():
     else:
         df['Rôle Majeur'] = "Milieu"
 
+    # Remplacement de 'Un contre un' par 'Défense'
     stats_mapping = {
         'UTIL': 'Utilisation', 'ATTA': 'Attaque', 'FINI': 'Finition', 
         'CREA': 'Création', 'CONS': 'Construction', 'DRIB': 'Dribble', 
         'PERC': 'Percussion', 'ENGA': 'Engagement', 'RECU': 'Récupération', 
-        'DEFE': 'Un contre un', 'ANTI': 'Anticipation', 'AERI': 'Aérien'
+        'DEFE': 'Défense', 'ANTI': 'Anticipation', 'AERI': 'Aérien'
     }
     stats_cols = [c for c in stats_mapping.keys() if c in df.columns]
     
@@ -245,7 +246,6 @@ with tab2:
         p_club_str = str(p_data['Équipe']).upper() if pd.notna(p_data['Équipe']) else 'SANS CLUB'
         p_role_str = str(p_data['Rôle Majeur']).upper()
         
-        # Sécurisation de la note globale moyenne
         try:
             general_note = int(round(float(p_data['Note_Moyenne_Stats'])))
             if math.isnan(general_note): general_note = 0
@@ -285,7 +285,8 @@ with tab2:
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
         # --- CONSTRUCTEUR DU GRAPHIQUE INTEGRÉ ---
-        categories = [stats_mapping[c].upper().replace(" ", "<br>") for c in stats_cols]
+        # "DÉFENSE" ne nécessite plus de balise <br> car il est court et reste en ligne unique
+        categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
         
         values = []
         for c in stats_cols:
@@ -297,16 +298,26 @@ with tab2:
             values.append(clean_val)
             
         colors = [get_fm_color(v) for v in values]
-        text_labels = [str(v) for v in values]
         
         fig_bars = go.Figure()
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
             marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
-            text=text_labels, textposition='outside',
-            textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif', weight='bold'),
+            text=None, # Désactivé ici car on gère les notes en couleur individuellement via annotations ci-dessous
             hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
         ))
+        
+        # Placement des Notes individualisées ET colorées au-dessus de chaque barre
+        for idx, cat_name in enumerate(categories):
+            val_score = values[idx]
+            col_score = colors[idx]
+            fig_bars.add_annotation(
+                x=cat_name, y=val_score,
+                text=str(val_score),
+                showarrow=False,
+                yshift=10, # Décale de 10px au-dessus du sommet de la barre
+                font=dict(size=12, color=col_score, family='Inter, Arial, sans-serif', weight='bold')
+            )
         
         # Configuration des Tiers ajustée sans coupures
         tiers = [
@@ -318,7 +329,7 @@ with tab2:
             {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
         ]
         
-        # Dessin des lignes horizontales pointillées et légendes reformatées
+        # Dessin des lignes horizontales pointillées et légendes
         for t in tiers:
             if t["y0"] > 0:
                 fig_bars.add_shape(
@@ -340,8 +351,8 @@ with tab2:
 
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=125, r=20),  # Marge gauche optimisée
-            height=630,                            # Ajusté plus haut suivant tes repères rouges
+            margin=dict(t=30, b=40, l=125, r=20),
+            height=630, # Hauteur optimisée selon tes repères
             showlegend=False,
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'), 
@@ -423,7 +434,6 @@ with tab4:
         plot_df = filtered_df.copy()
         plot_df['Club_Label'] = plot_df['Équipe'].fillna("Sans club")
         
-        # Nettoyage à la volée des axes pour le scatter
         plot_df[x_col] = pd.to_numeric(plot_df[x_col], errors='coerce').fillna(0)
         plot_df[y_col] = pd.to_numeric(plot_df[y_col], errors='coerce').fillna(0)
         
