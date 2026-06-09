@@ -275,8 +275,8 @@ with tab2:
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
-        # --- LOGIQUE NATIVE DU CONSTRUCTEUR GRAPHIQUE ---
-        # Ajout d'une colonne blanche au tout début (index 0) pour injecter la légende Photoshop
+        # --- CONSTRUCTEUR DU GRAPHIQUE INTEGRÉ ---
+        # On insère une colonne vide ("") à l'index 0 de l'axe X pour y projeter la légende
         categories = [""] + [stats_mapping[c].upper().replace(" ", "<br>") for c in stats_cols]
         values = [0] + [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
         colors = ["rgba(0,0,0,0)"] + [get_fm_color(v) for v in values[1:]]
@@ -287,140 +287,8 @@ with tab2:
             x=categories, y=values,
             marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
             text=text_labels, textposition='outside',
-            textfont=dict(size=12, color='#ffffff', family='Source Sans Pro, Inter, system-ui, sans-serif'),
+            textfont=dict(size=12, color='#ffffff', family='Inter, Arial, sans-serif'),
             hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
         ))
         
-        # Configuration des structures de la légende unifiée
-        tiers = [
-            {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "AU-DESSUS DE LA MOYENNE", "color": "#00ff66"},
-            {"y0": 50, "y1": 70, "y_text": 60, "title": "-- CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "EN-DESSOUS DE LA MOYENNE", "color": "#ff9f0a"},
-            {"y0": 15, "y1": 30, "y_text": 22.5, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
-        ]
-        
-        # Injection géométrique des blocs légendes sur la zone x = 0 (première colonne)
-        for t in tiers:
-            # Fond sombre de la carte
-            fig_bars.add_shape(
-                type="rectangle", x0=-0.45, x1=0.45, y0=t["y0"], y1=t["y1"],
-                fillcolor="#0c1017", line=dict(color="#21262d", width=1), layer="below"
-            )
-            # Bordure colorée gauche signature
-            fig_bars.add_shape(
-                type="rectangle", x0=-0.45, x1=-0.41, y0=t["y0"], y1=t["y1"],
-                fillcolor=t["color"], line=dict(width=0), layer="below"
-            )
-            # Textes intégrés
-            t_html = f"<span style='color:{t['color']}; font-weight:900; font-size:12px;'>{t['title']}</span>"
-            if t["sub"]:
-                t_html += f"<br><span style='color:#8b949e; font-size:9px; font-weight:700;'>{t['sub']}</span>"
-            
-            fig_bars.add_annotation(
-                x=-0.36, y=t["y_text"], text=t_html, showarrow=False, xanchor="left", yanchor="middle",
-                font=dict(family="Source Sans Pro, Inter, system-ui, sans-serif")
-            )
-            
-            # Lignes de rappel pointillées (partent de la fin de la légende jusqu'au bout du graph)
-            if t["y0"] > 0:
-                fig_bars.add_shape(
-                    type="line", x0=0.5, x1=len(categories)-0.5, y0=t["y0"], y1=t["y0"], 
-                    line=dict(color=t["color"], width=1, dash="dot"), layer='below'
-                )
-
-        fig_bars.update_layout(
-            plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=10, r=10), 
-            height=535,
-            showlegend=False,
-            xaxis=dict(
-                tickfont=dict(color='#ffffff', size=11, fontfamily='Source Sans Pro, Inter, system-ui, sans-serif', weight='bold'), 
-                gridcolor='rgba(0,0,0,0)', fixedrange=True
-            ),
-            yaxis=dict(
-                range=[0, 115], gridcolor='#161b22', 
-                tickvals=[0, 15, 30, 50, 70, 90, 100], 
-                tickfont=dict(color='#8b949e', size=10, family='Source Sans Pro, Inter, system-ui, sans-serif'), 
-                fixedrange=True
-            )
-        )
-        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
-    else:
-        st.warning("Aucun joueur trouvé.")
-
-
-# --- ONGLET 3 : COMPARATEUR ---
-with tab3:
-    st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
-    all_players = sorted(df[player_col].unique())
-    selected_players = st.multiselect("Choisissez les joueurs à comparer side-by-side", options=all_players, default=all_players[:2])
-    
-    if len(selected_players) >= 2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        cols_header = st.columns([2.5] + [2] * len(selected_players))
-        with cols_header[0]:
-            st.markdown("<div style='background-color:#0c1017; padding:15px; border-radius:6px; text-align:center; border:1px solid #21262d; min-height:75px; display:flex; align-items:center; justify-content:center;'><div style='font-size:12px; font-weight:700; color:#8b949e; text-transform:uppercase;'>CARACTÉRISTIQUES</div></div>", unsafe_allow_html=True)
-            
-        for idx, p_name in enumerate(selected_players):
-            p_row = df[df[player_col] == p_name].iloc[0]
-            p_club = p_row['Équipe'] if pd.notna(p_row['Équipe']) else "Sans club"
-            p_role = p_row['Rôle Majeur']
-            with cols_header[idx + 1]:
-                st.markdown(f"<div style='background-color:#0c1017; padding:10px; border-radius:6px; text-align:center; border:1px solid #21262d; min-height:75px;'><div style='font-size:14px; font-weight:900; color:#fff;'>{p_name.upper()}</div><div style='font-size:11px; color:#00d2ff; font-weight:600;'>{p_role}</div><div style='font-size:10px; color:#8b949e;'>🛡️ {p_club}</div></div>", unsafe_allow_html=True)
-        
-        cols_note = st.columns([2.5] + [2] * len(selected_players))
-        with cols_note[0]:
-            st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GLOBALE MOYENNE</div>", unsafe_allow_html=True)
-        for idx, p_name in enumerate(selected_players):
-            val_note = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
-            c_note = get_fm_color(val_note)
-            with cols_note[idx + 1]:
-                st.markdown(f"<div style='display:flex; justify-content:center; padding:6px 0;'><div style='border:2px solid {c_note}; color:{c_note}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:800; font-size:13px;'>{int(round(val_note))}</div></div>", unsafe_allow_html=True)
-                
-        st.markdown("<hr style='border-color:#21262d; margin:10px 0;'>", unsafe_allow_html=True)
-        
-        for c in stats_cols:
-            cols_data = st.columns([2.5] + [2] * len(selected_players))
-            with cols_data[0]:
-                st.markdown(f"<div style='padding:10px 10px; font-size:13px; font-weight:600; color:#c9d1d9;'>{stats_mapping[c].upper()}</div>", unsafe_allow_html=True)
-            for idx, p_name in enumerate(selected_players):
-                val = df[df[player_col] == p_name].iloc[0][f'{c} (Centile)']
-                c_val = get_fm_color(val)
-                with cols_data[idx + 1]:
-                    st.markdown(f"<div style='display:flex; justify-content:center; padding:4px 0;'><div style='border:2px solid {c_val}; color:{c_val}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:700; font-size:13px;'>{val}</div></div>", unsafe_allow_html=True)
-    else:
-        st.warning("Sélectionnez au moins 2 joueurs.")
-
-
-# --- ONGLET 4 : ANALYSE QUADRANT ---
-with tab4:
-    st.subheader("📈 Graphique d'Analyse à Deux Axes (Cross-Analyse)")
-    reverse_mapping = {v: k for k, v in stats_mapping.items()}
-    options_labels = list(stats_mapping.values())
-    
-    graph_col1, graph_col2 = st.columns(2)
-    with graph_col1: x_label = st.selectbox("Sélectionner l'Axe X (Horizontal)", options_labels, index=4)
-    with graph_col2: y_label = st.selectbox("Sélectionner l'Axe Y (Vertical)", options_labels, index=3)
-        
-    x_col = f"{reverse_mapping[x_label]} (Centile)"
-    y_col = f"{reverse_mapping[y_label]} (Centile)"
-    
-    if len(filtered_df) > 0:
-        plot_df = filtered_df.copy()
-        plot_df['Club_Label'] = plot_df['Équipe'].fillna("Sans club")
-        
-        fig = px.scatter(
-            plot_df, x=x_col, y=y_col, text=player_col, color='Note_Moyenne_Stats',
-            color_continuous_scale='Viridis', labels={x_col: f"{x_label.upper()} (Score Centile)", y_col: f"{y_label.upper()} (Score Centile)"}
-        )
-        fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#ffffff')))
-        fig.update_layout(
-            plot_bgcolor='#0c1017', paper_bgcolor='#05070a', font_color='#ffffff',
-            xaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]),
-            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]), height=580
-        )
-        fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
-        fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
-        st.plotly_chart(fig, use_container_width=True)
+        # Définition des blocs géométriques de la légende un
