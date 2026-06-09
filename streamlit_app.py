@@ -8,7 +8,7 @@ from datetime import datetime
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="FM Scouting Pro - Milieux", layout="wide", initial_sidebar_state="expanded")
 
-# --- INJECTION CSS & STYLE DIRECTEMENT INSPIRÉ DE TA MAQUETTE ---
+# --- INJECTION CSS & STYLE CHROME DARK ---
 st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
@@ -91,7 +91,7 @@ st.markdown("""
             background-color: transparent !important;
         }
 
-        /* Maquette Photoshop : Blocs de Légende de gauche */
+        /* Blocs de Légende de gauche */
         .perf-legend-box {
             padding: 10px;
             border-radius: 4px;
@@ -157,7 +157,7 @@ except Exception as e:
     st.stop()
 
 
-# --- CODES COULEURS ISSUS DE LA MAQUETTE HHyQ-q8XsAcMnjn.jpg ---
+# --- CODES COULEURS ISSUS DE LA MAQUETTE ---
 def get_fm_color(val):
     try:
         val = float(val)
@@ -243,7 +243,7 @@ with tab1:
         st.warning("Aucun joueur ne correspond aux critères.")
 
 
-# --- ONGLET 2 : PROFIL INDIVIDUEL (REPRODUCTION DE HHyQ-q8XsAcMnjn.jpg) ---
+# --- ONGLET 2 : PROFIL INDIVIDUEL (REPRODUCTION PARFAITE SANS CODE BLOQUÉ) ---
 with tab2:
     if len(filtered_df) > 0:
         player_list = sorted(filtered_df[player_col].unique())
@@ -252,46 +252,39 @@ with tab2:
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
         
         p_name_upper = str(p_data[player_col]).upper()
-        p_club_str = p_data['Équipe'] if pd.notna(p_data['Équipe']) else 'SANS CLUB'
-        p_role_str = p_data['Rôle Majeur'].upper()
+        p_club_str = str(p_data['Équipe']).upper() if pd.notna(p_data['Équipe']) else 'SANS CLUB'
+        p_role_str = str(p_data['Rôle Majeur']).upper()
         general_note = int(round(p_data['Note_Moyenne_Stats']))
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- BLOC SUPÉRIEUR : IDENTITÉ / METADONNÉES / NOTE GLOBALE ---
+        # --- AUCUN ESPACE DE DÉBUT DE LIGNE ICI POUR ÉVITER LE BUG DE CODE MARKOOWN ---
         top_dashboard_html = f"""
-        <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 15px; margin-bottom: 25px;">
-            <!-- BLOC GAUCHE : IDENTITÉ -->
-            <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: flex; gap: 15px; align-items: center;">
-                <div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; padding: 12px; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;">🏃‍♂️</div>
-                <div>
-                    <div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height:1.1;">{p_name_upper}</div>
-                    <div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px;">⚽ {p_club_str}</div>
-                    <div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">🛡️ {p_role_str}</div>
-                </div>
-            </div>
-            
-            <!-- BLOC CENTRAL : SPECIFICATIONS COMPLÈTES -->
-            <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
-                <div style="color:#8b949e;">🎂 AGE : <span style="color:#fff; font-weight:700;">{p_data['Âge']} ANS</span></div>
-                <div style="color:#8b949e;">🔍 SOURCE : <span style="color:#fff; font-weight:700;">WYSCOUT</span></div>
-                <div style="color:#8b949e;">📏 TAILLE : <span style="color:#fff; font-weight:700;">1M82</span></div>
-                <div style="color:#8b949e;">⏳ SAISON : <span style="color:#fff; font-weight:700;">2025/2026</span></div>
-                <div style="color:#8b949e;">🦶 PIED FORT : <span style="color:#fff; font-weight:700;">DROIT</span></div>
-                <div style="color:#8b949e;">📅 DATE DU POST : <span style="color:#fff; font-weight:700;">{current_date_str}</span></div>
-            </div>
-            
-            <!-- BLOC DROIT : NOTE GÉNÉRALE STYLE DESIGN PHOTOSHOP -->
-            <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE</div>
-                <div style="font-size: 54px; font-weight: 900; color: {note_color}; line-height: 1; text-shadow: 0 0 15px {note_color}40;">
-                    {general_note}<span style="font-size: 18px; color: #8b949e; font-weight: 500;">/100</span>
-                </div>
-            </div>
-        </div>
-        """
+<div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 15px; margin-bottom: 25px;">
+<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: flex; gap: 15px; align-items: center;">
+<div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; padding: 12px; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;">🏃‍♂️</div>
+<div>
+<div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height:1.1;">{p_name_upper}</div>
+<div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px;">⚽ {p_club_str}</div>
+<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">🛡️ {p_role_str}</div>
+</div>
+</div>
+<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+<div style="color:#8b949e;">🎂 AGE : <span style="color:#fff; font-weight:700;">{p_data['Âge']} ANS</span></div>
+<div style="color:#8b949e;">🔍 SOURCE : <span style="color:#fff; font-weight:700;">WYSCOUT</span></div>
+<div style="color:#8b949e;">📏 TAILLE : <span style="color:#fff; font-weight:700;">1M82</span></div>
+<div style="color:#8b949e;">⏳ SAISON : <span style="color:#fff; font-weight:700;">2025/2026</span></div>
+<div style="color:#8b949e;">🦶 PIED FORT : <span style="color:#fff; font-weight:700;">DROIT</span></div>
+<div style="color:#8b949e;">📅 DATE : <span style="color:#fff; font-weight:700;">{current_date_str}</span></div>
+</div>
+<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE</div>
+<div style="font-size: 54px; font-weight: 900; color: {note_color}; line-height: 1; text-shadow: 0 0 15px {note_color}40;">{general_note}<span style="font-size: 18px; color: #8b949e; font-weight: 500;">/100</span></div>
+</div>
+</div>
+"""
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
         
         # --- BLOC INFERIEUR : PERFORMANCES STATISTIQUES ---
@@ -300,85 +293,39 @@ with tab2:
         perf_col1, perf_col2 = st.columns([1, 3.8])
         
         with perf_col1:
-            st.markdown(f"""
-                <div class="perf-legend-box" style="border-left: 4px solid #00d2ff;">
-                    <div class="legend-title" style="color: #00d2ff;">💎 ELITE</div>
-                </div>
-                <div class="perf-legend-box" style="border-left: 4px solid #00ff66;">
-                    <div class="legend-title" style="color: #00ff66;">🔼 FORT</div>
-                    <div class="legend-sub">Au-dessus de la moyenne</div>
-                </div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ffd60a;">
-                    <div class="legend-title" style="color: #ffd60a;">-- CORRECT</div>
-                    <div class="legend-sub">Dans la moyenne</div>
-                </div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ff9f0a;">
-                    <div class="legend-title" style="color: #ff9f0a;">⚠️ FRAGILE</div>
-                    <div class="legend-sub">En-dessous de la moyenne</div>
-                </div>
-                <div class="perf-legend-box" style="border-left: 4px solid #ff453a;">
-                    <div class="legend-title" style="color: #ff453a;">⬇️ FAIBLE</div>
-                    <div class="legend-sub">À améliorer</div>
-                </div>
-                <div class="perf-legend-box" style="border-left: 4px solid #bf5af2;">
-                    <div class="legend-title" style="color: #bf5af2;">❌ CRITIQUE</div>
-                </div>
+            st.markdown("""
+                <div class="perf-legend-box" style="border-left: 4px solid #00d2ff;"><div class="legend-title" style="color: #00d2ff;">💎 ELITE</div></div>
+                <div class="perf-legend-box" style="border-left: 4px solid #00ff66;"><div class="legend-title" style="color: #00ff66;">🔼 FORT</div><div class="legend-sub">Au-dessus de la moyenne</div></div>
+                <div class="perf-legend-box" style="border-left: 4px solid #ffd60a;"><div class="legend-title" style="color: #ffd60a;">-- CORRECT</div><div class="legend-sub">Dans la moyenne</div></div>
+                <div class="perf-legend-box" style="border-left: 4px solid #ff9f0a;"><div class="legend-title" style="color: #ff9f0a;">⚠️ FRAGILE</div><div class="legend-sub">En-dessous de la moyenne</div></div>
+                <div class="perf-legend-box" style="border-left: 4px solid #ff453a;"><div class="legend-title" style="color: #ff453a;">⬇️ FAIBLE</div><div class="legend-sub">À améliorer</div></div>
+                <div class="perf-legend-box" style="border-left: 4px solid #bf5af2;"><div class="legend-title" style="color: #bf5af2;">❌ CRITIQUE</div></div>
             """, unsafe_allow_html=True)
             
         with perf_col2:
-            # Préparation des libellés avec retours à la ligne automatiques sur les espaces (style Photoshop)
             categories = [stats_mapping[c].replace(" ", "<br>") for c in stats_cols]
             values = [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
             colors = [get_fm_color(v) for v in values]
             
             fig_bars = go.Figure()
-            
-            # Ajout des barres verticales
             fig_bars.add_trace(go.Bar(
-                x=categories,
-                y=values,
-                marker=dict(
-                    color=colors,
-                    line=dict(color='rgba(0,0,0,0)', width=0)
-                ),
-                text=values,
-                textposition='outside',
+                x=categories, y=values,
+                marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
+                text=values, textposition='outside',
                 textfont=dict(size=12, color='#ffffff', family='Inter', weight='bold'),
                 hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
             ))
             
-            # Lignes horizontales de démarcation colorées fidèles aux seuils du modèle original
-            threshold_lines = [
-                (90, "#00d2ff"), (70, "#00ff66"), (50, "#ffd60a"), 
-                (30, "#ff9f0a"), (15, "#ff453a")
-            ]
+            threshold_lines = [(90, "#00d2ff"), (70, "#00ff66"), (50, "#ffd60a"), (30, "#ff9f0a"), (15, "#ff453a")]
             for level, color in threshold_lines:
-                fig_bars.add_shape(
-                    type="line", x0=-0.5, x1=len(categories)-0.5, y0=level, y1=level,
-                    line=dict(color=color, width=1, dash="dot")
-                )
+                fig_bars.add_shape(type="line", x0=-0.5, x1=len(categories)-0.5, y0=level, y1=level, line=dict(color=color, width=1, dash="dot"))
             
-            # Formatage graphique strict et moderne
             fig_bars.update_layout(
-                plot_bgcolor='#0c1017',
-                paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=25, b=10, l=10, r=10),
-                height=380,
-                showlegend=False,
-                xaxis=dict(
-                    tickfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'),
-                    gridcolor='rgba(0,0,0,0)',
-                    fixedrange=True
-                ),
-                yaxis=dict(
-                    range=[0, 110],
-                    gridcolor='#161b22',
-                    tickvals=[0, 15, 30, 50, 70, 90, 100],
-                    tickfont=dict(color='#8b949e', size=10),
-                    fixedrange=True
-                )
+                plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
+                margin=dict(t=25, b=10, l=10, r=10), height=380, showlegend=False,
+                xaxis=dict(tickfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'), gridcolor='rgba(0,0,0,0)', fixedrange=True),
+                yaxis=dict(range=[0, 110], gridcolor='#161b22', tickvals=[0, 15, 30, 50, 70, 90, 100], tickfont=dict(color='#8b949e', size=10), fixedrange=True)
             )
-            
             st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
         st.warning("Aucun joueur trouvé.")
@@ -403,7 +350,6 @@ with tab3:
             with cols_header[idx + 1]:
                 st.markdown(f"<div style='background-color:#0c1017; padding:10px; border-radius:6px; text-align:center; border:1px solid #21262d; min-height:75px;'><div style='font-size:14px; font-weight:900; color:#fff;'>{p_name.upper()}</div><div style='font-size:11px; color:#00d2ff; font-weight:600;'>{p_role}</div><div style='font-size:10px; color:#8b949e;'>⚽ {p_club}</div></div>", unsafe_allow_html=True)
         
-        # Ligne de Note Globale moyenne
         cols_note = st.columns([2.5] + [2] * len(selected_players))
         with cols_note[0]:
             st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GLOBALE MOYENNE</div>", unsafe_allow_html=True)
@@ -415,7 +361,6 @@ with tab3:
                 
         st.markdown("<hr style='border-color:#21262d; margin:10px 0;'>", unsafe_allow_html=True)
         
-        # Boucle sur les caractéristiques individuelles
         for c in stats_cols:
             cols_data = st.columns([2.5] + [2] * len(selected_players))
             with cols_data[0]:
@@ -448,15 +393,13 @@ with tab4:
         
         fig = px.scatter(
             plot_df, x=x_col, y=y_col, text=player_col, color='Note_Moyenne_Stats',
-            color_continuous_scale='Viridis', 
-            labels={x_col: f"{x_label} (Score Centile)", y_col: f"{y_label} (Score Centile)"}
+            color_continuous_scale='Viridis', labels={x_col: f"{x_label} (Score Centile)", y_col: f"{y_label} (Score Centile)"}
         )
         fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#ffffff')))
         fig.update_layout(
             plot_bgcolor='#0c1017', paper_bgcolor='#05070a', font_color='#ffffff',
             xaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]),
-            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]),
-            height=580
+            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]), height=580
         )
         fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
         fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
