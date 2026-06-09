@@ -7,7 +7,7 @@ from datetime import datetime
 import math
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Data'foot - Milieux", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="FM Scouting Pro - Milieux", layout="wide", initial_sidebar_state="expanded")
 
 # --- INJECTION CSS & STYLE CHROME DARK ---
 st.markdown("""
@@ -15,20 +15,15 @@ st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
 
     <style>
-        /* Thème sombre Premium */
         .stApp {
             background-color: #05070a !important;
             color: #e6edf2 !important;
             font-family: 'Inter', Arial, sans-serif;
         }
-        
-        /* Personnalisation de la barre latérale */
         section[data-testid="stSidebar"] {
             background-color: #0c1017 !important;
             border-right: 1px solid #21262d !important;
         }
-        
-        /* Onglets style FM */
         .stTabs [data-baseweb="tab"] {
             color: #8b949e !important;
             font-weight: 700 !important;
@@ -42,8 +37,6 @@ st.markdown("""
             border-bottom-color: #00d2ff !important;
             background-color: #0c1017 !important;
         }
-
-        /* Table de données immersive */
         .fm-table {
             width: 100%;
             border-collapse: separate;
@@ -66,10 +59,8 @@ st.markdown("""
         }
         .fm-th:hover { color: #ffffff; background-color: #161b22; }
         .fm-th-left { text-align: left; padding-left: 15px; }
-        
         .fm-tr { background-color: #05070a; transition: background-color 0.15s ease; }
         .fm-tr:hover { background-color: #0c1017; }
-        
         .fm-td {
             padding: 12px 10px;
             vertical-align: middle;
@@ -79,8 +70,6 @@ st.markdown("""
             border-bottom: 1px solid #161b22;
         }
         .fm-td-left { text-align: left; padding-left: 15px; }
-
-        /* Badges de Notes en Contour */
         .fm-badge {
             display: inline-block;
             font-weight: 700;
@@ -106,20 +95,49 @@ def load_and_process_data():
     
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     
+    # Mapping des rôles
     roles_mapping = {
         'SL': 'Seconde Lame', 'BB': 'Box to Box', 'MN': 'Meneur', 
         'ST': 'Sentinelle', 'RC': 'Récupérateur'
     }
-    actual_role_cols = [c for c in roles_mapping.keys() if c in df.columns]
+    role_cols = [c for c in roles_mapping.keys() if c in df.columns]
     
-    if actual_role_cols:
-        for r_col in actual_role_cols:
-            df[r_col] = pd.to_numeric(df[r_col], errors='coerce').fillna(999)
-        df['Rôle Majeur'] = df[actual_role_cols].idxmin(axis=1).map(roles_mapping)
-    else:
-        df['Rôle Majeur'] = "Milieu"
+    # Nettoyage des colonnes M et Rôles
+    for col in ['M'] + role_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(999)
+        
+    # Détermination du rôle majeur (valeur minimale parmi les colonnes de rôles)
+    df['Role_Code_Majeur'] = df[role_cols].idxmin(axis=1)
+    df['Rôle Majeur'] = df['Role_Code_Majeur'].map(roles_mapping)
 
-    # Remplacement de 'Un contre un' par 'Défense'
+    # NOUVEAU CALCUL DE LA NOTE GÉNÉRALE (Formule pondérée sur l'échantillon N=362)
+    N = 362
+    
+    # 1. Note de la colonne M
+    df['Score_M'] = (1 - (df['M'] - 1) / N) * 100
+    
+    # 2. Note du rôle majeur
+    df['Score_Role_Valeur'] = df.apply(lambda row: row[row['Role_Code_Majeur']], axis=1)
+    df['Score_Role'] = (1 - (df['Score_Role_Valeur'] - 1) / N) * 100
+    
+    # 3. Position sur toutes les notes globales (Classement basé sur M)
+    df['Rang_Global_M'] = df['M'].rank(method='min', ascending=True)
+    df['Score_Rang_Global'] = (1 - (df['Rang_Global_M'] - 1) / N) * 100
+    
+    # 4. Position du joueur dans son rôle spécifique
+    df['Rang_Dans_Role'] = df.groupby('Role_Code_Majeur')['Score_Role_Valeur'].rank(method='min', ascending=True)
+    df['Score_Rang_Role'] = (1 - (df['Rang_Dans_Role'] - 1) / N) * 100
+    
+    # calcul de la note finale : (Score_M + Score_Role * 2 + Score_Rang_Global + Score_Rang_Role) / 5
+    df['Note_Moyenne_Stats'] = (
+        df['Score_M'] + 
+        (df['Score_Role'] * 2) + 
+        df['Score_Rang_Global'] + 
+        df['Score_Rang_Role']
+    ) / 5
+    df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
+
+    # Traitement des statistiques de compétences
     stats_mapping = {
         'UTIL': 'Utilisation', 'ATTA': 'Attaque', 'FINI': 'Finition', 
         'CREA': 'Création', 'CONS': 'Construction', 'DRIB': 'Dribble', 
@@ -132,19 +150,13 @@ def load_and_process_data():
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(df[col].max() + 1)
         df[f'{col} (Centile)'] = (df[col].rank(ascending=False, pct=True) * 100).round().astype(int)
         
-    centile_cols_generated = [f'{col} (Centile)' for col in stats_cols]
-    if centile_cols_generated:
-        df['Note_Moyenne_Stats'] = df[centile_cols_generated].mean(axis=1).round(1)
-    else:
-        df['Note_Moyenne_Stats'] = 0
-        
     return df, player_col, stats_cols, stats_mapping
 
 
 try:
     df, player_col, stats_cols, stats_mapping = load_and_process_data()
 except Exception as e:
-    st.error(f"Impossible de charger le fichier : {e}")
+    st.error(f"Impossible de charger le fichier ou erreur de calcul : {e}")
     st.stop()
 
 
@@ -163,7 +175,7 @@ def get_fm_color(val):
 
 
 # --- INTERFACE SIDEBAR ---
-st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ DATA'Foot</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ FM SCOUTING</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
 search_query = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().lower()
@@ -201,7 +213,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 # --- ONGLET 1 : BASE GLOBALE ---
 with tab1:
-    st.subheader("Base de Données des Joueurs (Notes en Centiles)")
+    st.subheader("Base de Données des Joueurs (Notes Globales Ajustées)")
     if len(display_df) > 0:
         html_table = "<table class='fm-table' id='fmin-table'><thead><tr>"
         html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th><th class='fm-th'>Âge</th><th class='fm-th'>Rôle</th><th class='fm-th'>Général</th>"
@@ -246,17 +258,13 @@ with tab2:
         p_club_str = str(p_data['Équipe']).upper() if pd.notna(p_data['Équipe']) else 'SANS CLUB'
         p_role_str = str(p_data['Rôle Majeur']).upper()
         
-        try:
-            general_note = int(round(float(p_data['Note_Moyenne_Stats'])))
-            if math.isnan(general_note): general_note = 0
-        except:
-            general_note = 0
-            
+        general_note = int(round(float(p_data['Note_Moyenne_Stats'])))
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Dashboard supérieur avec l'intégration des détails de la note
         top_dashboard_html = f"""
 <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 15px; margin-bottom: 25px;">
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: flex; gap: 15px; align-items: center;">
@@ -264,19 +272,19 @@ with tab2:
 <div>
 <div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height:1.1;">{p_name_upper}</div>
 <div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px;">🛡️ {p_club_str}</div>
-<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">⚙️ {p_role_str}</div>
+<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">⚙️ RÔLE : {p_role_str}</div>
 </div>
 </div>
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
 <div style="color:#8b949e;">🎂 AGE : <span style="color:#fff; font-weight:700;">{p_data['Âge']} ANS</span></div>
+<div style="color:#8b949e;">📊 NOTE M (Pond.) : <span style="color:#fff; font-weight:700;">{int(round(p_data['Score_M']))}/100</span></div>
 <div style="color:#8b949e;">🔍 SOURCE : <span style="color:#fff; font-weight:700;">WYSCOUT</span></div>
-<div style="color:#8b949e;">📏 TAILLE : <span style="color:#fff; font-weight:700;">X</span></div>
-<div style="color:#8b949e;">⏳ SAISON : <span style="color:#fff; font-weight:700;">2025/2026</span></div>
-<div style="color:#8b949e;">🦶 PIED FORT : <span style="color:#fff; font-weight:700;">X</span></div>
+<div style="color:#8b949e;">🎖️ NOTE RÔLE (Coeff 2) : <span style="color:#00d2ff; font-weight:700;">{int(round(p_data['Score_Role']))}/100</span></div>
 <div style="color:#8b949e;">📅 DATE : <span style="color:#fff; font-weight:700;">{current_date_str}</span></div>
+<div style="color:#8b949e;">🏆 RANG GLB / RÔLE : <span style="color:#fff; font-weight:700;">{int(round(p_data['Score_Rang_Global']))} | {int(round(p_data['Score_Rang_Role']))}</span></div>
 </div>
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE</div>
+<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE FINALE</div>
 <div style="font-size: 54px; font-weight: 900; color: {note_color}; line-height: 1; text-shadow: 0 0 15px {note_color}40;">{general_note}<span style="font-size: 18px; color: #8b949e; font-weight: 500;">/100</span></div>
 </div>
 </div>
@@ -284,30 +292,25 @@ with tab2:
         st.markdown(top_dashboard_html, unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
-        # --- CONSTRUCTEUR DU GRAPHIQUE INTEGRÉ ---
-        # "DÉFENSE" ne nécessite plus de balise <br> car il est court et reste en ligne unique
+        # --- CONSTRUCTEUR DU GRAPHIQUE BARRES ---
         categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
         
         values = []
         for c in stats_cols:
             raw_val = p_data.get(f"{c} (Centile)", 0)
-            try:
-                clean_val = int(float(raw_val)) if pd.notna(raw_val) else 0
-            except:
-                clean_val = 0
-            values.append(clean_val)
+            values.append(int(float(raw_val)) if pd.notna(raw_val) else 0)
             
         colors = [get_fm_color(v) for v in values]
         
         fig_bars = go.Figure()
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
-            marker=dict(color=colors, line=dict(color='rgba(0,0,0,0)', width=0)),
-            text=None, # Désactivé ici car on gère les notes en couleur individuellement via annotations ci-dessous
+            marker=dict(color=colors, line=dict(width=0)),
+            text=None,
             hovertemplate="<b>%{x}</b><br>Score Centile: %{y}/100<extra></extra>"
         ))
         
-        # Placement des Notes individualisées ET colorées au-dessus de chaque barre
+        # Placement des étiquettes individuelles en couleur au-dessus des barres
         for idx, cat_name in enumerate(categories):
             val_score = values[idx]
             col_score = colors[idx]
@@ -315,21 +318,20 @@ with tab2:
                 x=cat_name, y=val_score,
                 text=str(val_score),
                 showarrow=False,
-                yshift=10, # Décale de 10px au-dessus du sommet de la barre
+                yshift=10,
                 font=dict(size=12, color=col_score, family='Inter, Arial, sans-serif', weight='bold')
             )
         
-        # Configuration des Tiers ajustée sans coupures
+        # Configuration des paliers de niveau (Tiers)
         tiers = [
-            {"y0": 90, "y1": 100, "y_text": 95, "title": " ELITE", "sub": "", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": " FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
-            {"y0": 50, "y1": 70, "y_text": 60, "title": " CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": " FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
-            {"y0": 15, "y1": 30, "y_text": 22.5, "title": " FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y0": 0, "y1": 15, "y_text": 7.5, "title": " CRITIQUE", "sub": "", "color": "#bf5af2"}
+            {"y0": 90, "y1": 100, "y_text": 95, "title": "💎 ELITE", "sub": "", "color": "#00d2ff"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": "🔼 FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
+            {"y0": 50, "y1": 70, "y_text": 60, "title": "-- CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y0": 30, "y1": 50, "y_text": 40, "title": "⚠️ FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
+            {"y0": 15, "y1": 30, "y_text": 22.5, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "❌ CRITIQUE", "sub": "", "color": "#bf5af2"}
         ]
         
-        # Dessin des lignes horizontales pointillées et légendes
         for t in tiers:
             if t["y0"] > 0:
                 fig_bars.add_shape(
@@ -352,7 +354,7 @@ with tab2:
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(t=30, b=40, l=125, r=20),
-            height=630, # Hauteur optimisée selon tes repères
+            height=630,
             showlegend=False,
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'), 
@@ -391,7 +393,7 @@ with tab3:
         
         cols_note = st.columns([2.5] + [2] * len(selected_players))
         with cols_note[0]:
-            st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GLOBALE MOYENNE</div>", unsafe_allow_html=True)
+            st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GENERALE AJUSTÉE</div>", unsafe_allow_html=True)
         for idx, p_name in enumerate(selected_players):
             val_note = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
             c_note = get_fm_color(val_note)
