@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="FM Scouting Pro - Milieux", layout="wide", initial_sidebar_state="expanded")
 
-# --- INJECTION CSS & JAVASCRIPT STYLE FOOTBALL MANAGER (OUTLINED MODERN) ---
+# --- INJECTION CSS & JAVASCRIPT STYLE FOOTBALL MANAGER ---
 st.markdown("""
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"></script>
@@ -90,7 +90,7 @@ st.markdown("""
         .fm-th[aria-sort="ascending"]::after { content: " ▲"; color: #00d2ff; font-size: 10px; }
         .fm-th[aria-sort="descending"]::after { content: " ▼"; color: #00d2ff; font-size: 10px; }
 
-        /* Badges de Notes en Contour (Style Image Modèle) */
+        /* Badges de Notes en Contour (Style demandé) */
         .fm-badge {
             display: inline-block;
             font-weight: 700;
@@ -173,7 +173,7 @@ except Exception as e:
     st.stop()
 
 
-# --- CONFIGURATION EXACTE DU CODE COULEUR DEMANDÉ ---
+# --- CONFIGURATION DU CODE COULEUR STRICT ---
 def get_fm_color(val):
     try:
         val = float(val)
@@ -216,7 +216,7 @@ display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
 
 # --- STRATEGIE DES ONGLETS ---
 st.title("📊 Dashboard de Scouting Premium")
-st.markdown(f"**{len(display_df)}** milieux de terrain correspondent à vos critères actuels.")
+st.markdown(f"**{len(display_df)}** milieux de terrain correspondent à vos critères actifs.")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "📂 Base Globale", 
@@ -266,10 +266,8 @@ with tab1:
             html_table += f"<td class='fm-td' style='font-weight: 600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#151b23; padding:3px 8px; border-radius:4px; border:1px solid #30363d;'>{p_role}</span></td>"
             
-            # Note générale encadrée en couleur
             html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='border: 2px solid {c_note}; color: {c_note} !important;'>{int(round(p_note))}</span></td>"
             
-            # Caractéristiques encadrées en couleur
             for c in stats_cols:
                 val = row[f"{c} (Centile)"]
                 c_val = get_fm_color(val)
@@ -291,7 +289,7 @@ with tab1:
         st.warning("Aucun joueur ne correspond à vos filtres actuels.")
 
 
-# --- ONGLET 2 : PROFIL INDIVIDUEL ---
+# --- ONGLET 2 : PROFIL INDIVIDUEL (STYLE RADAR OPTA REVISITÉ) ---
 with tab2:
     if len(filtered_df) > 0:
         player_list = sorted(filtered_df[player_col].unique())
@@ -301,7 +299,7 @@ with tab2:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        prof_col1, prof_col2 = st.columns([1.2, 2])
+        prof_col1, prof_col2 = st.columns([1, 2])
         
         with prof_col1:
             st.markdown(f"""
@@ -320,29 +318,69 @@ with tab2:
             """, unsafe_allow_html=True)
             
         with prof_col2:
+            # --- CRÉATION DU PIZZA CHART (STYLE OPTA ANALYST) ---
             categories = [stats_mapping[c] for c in stats_cols]
-            values = [p_data[f"{c} (Centile)"] for c in stats_cols]
+            values = [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
+            colors = [get_fm_color(v) for v in values]
             
-            categories.append(categories[0])
-            values.append(values[0])
+            fig_pizza = go.Figure()
             
-            fig_radar = go.Figure()
-            fig_radar.add_trace(go.Scatterpolar(
-                r=values, theta=categories, fill='toself',
-                fillcolor='rgba(0, 210, 255, 0.12)',
-                line=dict(color='#00d2ff', width=2), name=selected_player
-            ))
-            fig_radar.update_layout(
-                polar=dict(
-                    radialaxis=dict(visible=True, range=[0, 100], gridcolor="#30363d", tickfont=dict(color="#8b949e")),
-                    angularaxis=dict(gridcolor="#30363d", tickfont=dict(color="#ffffff", size=11))
+            # Ajout des parts de pizza pleines (Barpolar)
+            fig_pizza.add_trace(go.Barpolar(
+                r=values,
+                theta=categories,
+                width=[360 / len(stats_cols)] * len(stats_cols),
+                marker=dict(
+                    color=colors,
+                    opacity=0.65,
+                    line=dict(color='#0c1017', width=2)
                 ),
-                showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                height=350, margin=dict(t=20, b=20, l=40, r=40)
+                hoverinfo='skip'
+            ))
+            
+            # Ajout des scores numériques au centre de chaque part (comme sur le modèle Opta)
+            # On place le texte légèrement en retrait de la pointe (ex: à 75% du rayon de la part)
+            text_positions_r = [max(v * 0.75, 12) if v > 20 else 10 for v in values]
+            
+            fig_pizza.add_trace(go.Scatterpolar(
+                r=text_positions_r,
+                theta=categories,
+                mode='text',
+                text=[f"<b>{v}</b>" for v in values],
+                textfont=dict(size=12, color='#ffffff'),
+                hoverinfo='skip'
+            ))
+            
+            # Configuration globale de la zone de graphique sombre
+            fig_pizza.update_layout(
+                polar=dict(
+                    bgcolor='#11161d',
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 100],
+                        gridcolor="#30363d",
+                        linecolor="rgba(0,0,0,0)",
+                        tickvals=[20, 40, 60, 80, 100],
+                        tickfont=dict(color="#8b949e", size=9),
+                        ticks=""
+                    ),
+                    angularaxis=dict(
+                        gridcolor="#30363d",
+                        tickfont=dict(color="#ffffff", size=11),
+                        ticks=""
+                    )
+                ),
+                showlegend=False,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                height=420,
+                margin=dict(t=30, b=30, l=60, r=60)
             )
-            st.plotly_chart(fig_radar, use_container_width=True, config={'displayModeBar': False})
+            
+            st.plotly_chart(fig_pizza, use_container_width=True, config={'displayModeBar': False})
 
-        st.markdown("<h4 style='color:#ffffff; margin-top:30px; margin-bottom:15px;'>📊 Détail des Caractéristiques (Score Centile)</h4>", unsafe_allow_html=True)
+        # Grille de détails en dessous
+        st.markdown("<h4 style='color:#ffffff; margin-top:20px; margin-bottom:15px;'>📊 Détail des Caractéristiques (Score Centile)</h4>", unsafe_allow_html=True)
         
         stat_grid_cols = st.columns(4)
         for idx, c in enumerate(stats_cols):
