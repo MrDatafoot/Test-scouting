@@ -1,73 +1,67 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, ColumnsAutoSizeMode
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-# Configuration page
+# Configuration de la page
 st.set_page_config(page_title="Scouting Milieux", layout="wide")
 
-# CSS identique à ta version stylisée
-st.markdown("""
-    <style>
-        .stApp {background-color: #0d1117;}
-        .fm-badge {padding: 4px 12px; border-radius: 6px; font-weight: bold; text-align: center;}
-    </style>
-""", unsafe_allow_html=True)
-
+# --- CHARGEMENT DES DONNÉES ---
 @st.cache_data
-def load_and_process_data():
+def load_data():
     df = pd.read_excel("MILIEUX.ods")
+    # Nettoyage colonnes
     df.columns = [str(c).strip() for c in df.columns]
     if "Unnamed" in df.columns[0] or df.columns[0] == "A":
         df.rename(columns={df.columns[0]: "Âge"}, inplace=True)
     
+    # Statistiques
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     stats_mapping = {'UTIL': 'MINUTES', 'ATTA': 'ATTAQUE', 'FINI': 'FINITION', 'CREA': 'CRÉATION', 'CONS': 'CONSTRUCTION', 'DRIB': 'DRIBBLES', 'PERC': 'PERCUSSION', 'ENGA': 'ENGAGEMENT', 'RECU': 'RÉCUPÉRATION', 'DEFE': 'UN CONTRE UN', 'ANTI': 'ANTICIPATION', 'AERI': 'AÉRIEN'}
     stats_cols = [c for c in stats_mapping.keys() if c in df.columns]
     
-    # Calculs
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     df['Note_Moyenne_Stats'] = df[stats_cols].mean(axis=1).round(1)
     return df, player_col, stats_cols, stats_mapping
 
-df, player_col, stats_cols, stats_mapping = load_and_process_data()
+df, player_col, stats_cols, stats_mapping = load_data()
 
 # --- INTERFACE ---
-st.title("⚽ Dashboard de Scouting Complet")
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Base de données", "👤 Profil Joueur", "⚔️ Comparateur", "📈 Analyse"])
 
-# 1. BASE DE DONNÉES (Ag-Grid pour le TRI)
+# 1. BASE DE DONNÉES (Ag-Grid)
 with tab1:
-    st.subheader("Base globale des joueurs")
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_default_column(sortable=True, filter=True)
-    grid_options = gb.build()
-    AgGrid(df, gridOptions=grid_options, theme='alpine', height=500, width='100%', 
-           columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS)
+    AgGrid(df, gridOptions=gb.build(), theme='alpine', height=500)
 
 # 2. PROFIL JOUEUR
 with tab2:
-    st.subheader("👤 Fiche Identité")
-    selected_player = st.selectbox("Choisir un joueur", df[player_col].unique())
-    p_data = df[df[player_col] == selected_player].iloc[0]
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.markdown(f"### {p_data[player_col]}")
-        st.write(f"Âge: {p_data['Âge']}")
-    with col2:
+    selected = st.selectbox("Choisir un joueur", df[player_col].unique())
+    p_data = df[df[player_col] == selected].iloc[0]
+    c1, c2 = st.columns(2)
+    with c1:
+        st.write(f"### {selected}")
+        st.write(f"**Club :** {p_data.get('Équipe', 'N/A')}")
+    with c2:
         st.metric("Note Moyenne", p_data['Note_Moyenne_Stats'])
+    # Affichage des stats en barres simples
+    for stat in stats_cols:
+        st.write(f"{stats_mapping[stat]} : {p_data[stat]}")
+        st.progress(p_data[stat] / 100)
 
 # 3. COMPARATEUR
 with tab3:
-    st.subheader("⚔️ Comparateur")
-    players = st.multiselect("Sélectionnez les joueurs", df[player_col].unique(), default=df[player_col].iloc[:2])
+    players = st.multiselect("Sélectionnez 2-3 joueurs", df[player_col].unique(), default=df[player_col].iloc[:2])
     if players:
-        comp_df = df[df[player_col].isin(players)]
-        st.table(comp_df[[player_col, 'Note_Moyenne_Stats'] + stats_cols])
+        # Création du tableau de comparaison
+        comp_df = df[df[player_col].isin(players)].set_index(player_col)
+        st.dataframe(comp_df[['Note_Moyenne_Stats'] + stats_cols])
 
-# 4. ANALYSE GRAPHIQUE
+# 4. ANALYSE
 with tab4:
-    st.subheader("📈 Analyse")
-    fig = px.scatter(df, x='CREA', y='ATTA', color='Note_Moyenne_Stats', hover_name=player_col)
-    st.plotly_chart(fig)
+    x = st.selectbox("Axe X", stats_cols, index=0)
+    y = st.selectbox("Axe Y", stats_cols, index=1)
+    fig = px.scatter(df, x=x, y=y, color="Note_Moyenne_Stats", hover_name=player_col)
+    st.plotly_chart(fig, use_container_width=True)
