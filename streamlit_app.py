@@ -129,8 +129,8 @@ def load_and_process_data():
     
     # Configuration des Rôles (la note la plus basse = son rôle majeur)
     roles_mapping = {
-        'SL': 'Seconde lame',
-        'BB': 'Box to box',
+        'SL': 'Seconde Lame',
+        'BB': 'Box to Box',
         'MN': 'Meneur',
         'ST': 'Sentinelle',
         'RC': 'Récupérateur'
@@ -155,7 +155,6 @@ def load_and_process_data():
     stats_cols = [c for c in stats_mapping.keys() if c in df.columns]
     
     # Conversion en Centiles (0 à 100). Formule : Rangs inversés car la note la plus basse est la meilleure.
-    # rank(ascending=False, pct=True) attribue le plus haut pourcentage à la plus petite valeur.
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(df[col].max() + 1)
         df[f'{col} (Centile)'] = (df[col].rank(ascending=False, pct=True) * 100).round().astype(int)
@@ -212,7 +211,7 @@ selected_roles = st.sidebar.multiselect("Rôles Majeurs tactiques", options=avai
 # Application globale des filtres
 filtered_df = df[(df["Âge"] >= selected_age[0]) & (df["Âge"] <= selected_age[1])]
 if search_query:
-    filtered_df = filtered_df[filtered_df[player_col].str.lower().contains(search_query)]
+    filtered_df = filtered_df[filtered_df[player_col].str.lower().str.contains(search_query, na=False)]
 if selected_clubs:
     filtered_df = filtered_df[filtered_df['Équipe'].isin(selected_clubs)]
 if selected_roles:
@@ -346,7 +345,7 @@ with tab2:
             fig_radar.update_layout(
                 polar=dict(
                     radialaxis=dict(visible=True, range=[0, 100], gridcolor="#30363d", tickfont=dict(color="#8b949e")),
-                    angularaxis=dict(gridcolor="#30363d", tickfont=dict(color="#ffffff", size=11, font=dict(weight="bold")))
+                    angularaxis=dict(gridcolor="#30363d", tickfont=dict(color="#ffffff", size=11))
                 ),
                 showlegend=False,
                 paper_bgcolor='rgba(0,0,0,0)',
