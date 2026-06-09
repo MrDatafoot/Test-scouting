@@ -313,13 +313,12 @@ with tab2:
             """, unsafe_allow_html=True)
             
         with prof_col2:
-            # --- CONSTRUIRE UN VRAI PIZZA CHART SANS CHEVAUCHEMENT (MAPPING NUMÉRIQUE 0-360°) ---
+            # --- CONSTRUIRE UN VRAI PIZZA CHART (MAPPING NUMÉRIQUE 0-360°) ---
             categories = [stats_mapping[c] for c in stats_cols]
             values = [int(p_data[f"{c} (Centile)"]) for c in stats_cols]
             colors = [get_fm_color(v) for v in values]
             
             num_stats = len(stats_cols)
-            # On calcule des angles précis en degrés pour que Plotly ne confonde pas les largeurs
             angles = [i * (360 / num_stats) for i in range(num_stats)]
             width_per_sector = [360 / num_stats] * num_stats
             
@@ -333,14 +332,13 @@ with tab2:
                 marker=dict(
                     color=colors,
                     opacity=0.75,
-                    line=dict(color='#0c1017', width=2) # Ligne de séparation noire entre les parts
+                    line=dict(color='#0c1017', width=2)
                 ),
                 hoverinfo='skip'
             ))
             
             # 2. Placement des notes chiffrées au milieu de chaque part
-            # On place la note à environ 55% du rayon de la part pour qu'elle soit bien centrée
-            text_positions_r = [max(v * 0.55, 12) for v in values]
+            text_positions_r = [max(v * 0.55, 15) for v in values]
             
             fig_pizza.add_trace(go.Scatterpolar(
                 r=text_positions_r,
@@ -351,7 +349,7 @@ with tab2:
                 hoverinfo='skip'
             ))
             
-            # 3. Configuration du layout polaire ultra-pro sur fond sombre
+            # 3. Configuration du layout polaire
             fig_pizza.update_layout(
                 polar=dict(
                     bgcolor='#11161d',
@@ -361,14 +359,14 @@ with tab2:
                         gridcolor="#21262d",
                         linecolor="rgba(0,0,0,0)",
                         tickvals=[20, 40, 60, 80, 100],
-                        tickfont=dict(color="#8b949e", size=9),
+                        tickfont=dict(color="#8b949e", size=9, family='Inter'),
                         ticks=""
                     ),
                     angularaxis=dict(
                         tickvals=angles,
-                        ticktext=categories, # On remplace les degrés par le nom des caractéristiques
+                        ticktext=categories,
                         gridcolor="#21262d",
-                        tickfont=dict(color="#ffffff", size=11, fontfamily='Inter'),
+                        tickfont=dict(color="#ffffff", size=11, family='Inter'),
                         ticks="",
                         direction="clockwise",
                         period=360
@@ -378,7 +376,7 @@ with tab2:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 height=450,
-                margin=dict(t=40, b=40, l=80, r=80)
+                margin=dict(t=50, b=50, l=80, r=80)
             )
             
             st.plotly_chart(fig_pizza, use_container_width=True, config={'displayModeBar': False})
