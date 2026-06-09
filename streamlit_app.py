@@ -7,7 +7,7 @@ from datetime import datetime
 import math
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="FM Scouting Pro - Milieux", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Data'foot - Milieux", layout="wide", initial_sidebar_state="expanded")
 
 # --- INJECTION CSS & STYLE CHROME DARK ---
 st.markdown("""
