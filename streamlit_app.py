@@ -7,7 +7,7 @@ from datetime import datetime
 import math
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="FM Scouting Pro - Milieux", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="DATA'Foot Scouting", layout="wide", initial_sidebar_state="expanded")
 
 # --- INJECTION CSS & STYLE CHROME DARK ---
 st.markdown("""
@@ -179,7 +179,7 @@ def get_fm_color(val):
 
 
 # --- INTERFACE SIDEBAR ---
-st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>⚽ FM SCOUTING</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>BIENVENUE !</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
 search_query = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().lower()
@@ -205,7 +205,7 @@ display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
 
 
 # --- NAVIGATION PRINCIPALE ---
-st.title("📊 Dashboard de Scouting Premium")
+st.title("SCOUTING DTFOOTBALL")
 
 tab1, tab2, tab3, tab4 = st.tabs([
     "📂 Base Globale",
@@ -217,7 +217,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 # --- ONGLET 1 : BASE GLOBALE ---
 with tab1:
-    st.subheader("Base de Données des Joueurs (Notes Globales Ajustées)")
+    st.subheader("Base de Données des Joueurs")
     
     if len(display_df) > 0:
         # --- SYSTÈME DE TRI NATIF STREAMLIT ---
@@ -227,11 +227,11 @@ with tab1:
             for c in stats_cols:
                 sort_options[stats_mapping[c]] = f"{c} (Centile)"
             
-            selected_sort_label = st.selectbox("📌 Trier la base par :", list(sort_options.keys()), index=0)
+            selected_sort_label = st.selectbox("Trier la base par :", list(sort_options.keys()), index=0)
             sort_column = sort_options[selected_sort_label]
             
         with col_sort2:
-            sort_order = st.selectbox("↕️ Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
+            sort_order = st.selectbox("Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
             ascending_order = True if sort_order == "Croissant (Min → Max)" else False
 
         # On applique le tri ici
