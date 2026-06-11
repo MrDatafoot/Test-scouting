@@ -337,7 +337,7 @@ with tab1:
             p_note_arrondie = int(round(row['Note_Moyenne_Stats']))
             c_note = get_fm_color(p_note_arrondie)
 
-            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
+            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'> {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
             html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{p_note_arrondie}</span></td>"
