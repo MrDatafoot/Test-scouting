@@ -114,32 +114,42 @@ def load_and_process_data():
     df['Rôle Majeur'] = df['Role_Code_Majeur'].map(roles_mapping)
     df['Role_Valeur_Max'] = df[role_cols].max(axis=1)
 
-  # --- CALCUL DE LA NOTE GÉNÉRALE ---
-    # Au lieu d'un chiffre fixe, on compte automatiquement le nombre total de joueurs
+# --- CALCUL DE LA NOTE GÉNÉRALE ---
     N = len(df) 
 
-    # 1. Score M (déjà sur 100, valeur directe)
+    # 1. Score M et 2. Score Rôle
     df['Score_M'] = df['M']
-
-    # 2. Meilleur rôle (déjà sur 100, valeur directe)
     df['Score_Role'] = df['Role_Valeur_Max']
 
-    # 3. Position globale sur M → convertie sur 100
+    # 3. Position globale et 4. Position dans le rôle
     df['Rang_Global_M'] = df['M'].rank(ascending=False, method='min')
     df['Score_Rang_Global'] = ((df['Rang_Global_M'] / N) - 1) * -100
 
-    # 4. Position dans le meilleur rôle → convertie sur 100 par rapport au groupe de ce rôle
     df['Score_Rang_Role'] = df.groupby('Role_Code_Majeur')['Role_Valeur_Max'].transform(
         lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
     )
 
-    # Note finale = moyenne simple des 4 composantes
-    df['Note_Moyenne_Stats'] = (
+    # --- VALORISATION DE LA COMPLÉTITUDE (TOUTES COMPÉTENCES) ---
+    # On liste absolument toutes les compétences, jeu aérien inclus
+    competences_cles = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
+    
+    # On calcule combien de compétences sont au-dessus de 50 (la moyenne)
+    df['Comp_Au_Dessus_50'] = df[competences_cles].apply(lambda row: sum(row >= 50), axis=1)
+    
+    # On crée un bonus : par exemple +1 point de note générale pour chaque compétence au-dessus de 50 au-delà de 6 compétences
+    # Si Pedri valide 11 compétences sur 12, il prend un bonus de +5 points ((11 - 6) * 1) !
+    df['Bonus_Polyvalence'] = (df['Comp_Au_Dessus_50'] - 6).clip(lower=0) * 1.0
+
+    # Note de base (moyenne des 4 composantes)
+    note_base = (
         df['Score_M'] +
         df['Score_Role'] +
         df['Score_Rang_Global'] +
         df['Score_Rang_Role']
     ) / 4
+
+    # Note finale avec application du bonus (on plafonne à 100 maximum)
+    df['Note_Moyenne_Stats'] = (note_base + df['Bonus_Polyvalence']).clip(upper=100)
     df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
 
     # --- STATISTIQUES DE COMPÉTENCES ---
