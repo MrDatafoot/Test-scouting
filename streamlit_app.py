@@ -114,8 +114,9 @@ def load_and_process_data():
     df['Rôle Majeur'] = df['Role_Code_Majeur'].map(roles_mapping)
     df['Role_Valeur_Max'] = df[role_cols].max(axis=1)
 
-    # --- CALCUL DE LA NOTE GÉNÉRALE ---
-    N = 362
+  # --- CALCUL DE LA NOTE GÉNÉRALE ---
+    # Au lieu d'un chiffre fixe, on compte automatiquement le nombre total de joueurs
+    N = len(df) 
 
     # 1. Score M (déjà sur 100, valeur directe)
     df['Score_M'] = df['M']
@@ -127,9 +128,10 @@ def load_and_process_data():
     df['Rang_Global_M'] = df['M'].rank(ascending=False, method='min')
     df['Score_Rang_Global'] = ((df['Rang_Global_M'] / N) - 1) * -100
 
-    # 4. Position dans le meilleur rôle → convertie sur 100
-    df['Rang_Dans_Role'] = df.groupby('Role_Code_Majeur')['Role_Valeur_Max'].rank(ascending=False, method='min')
-    df['Score_Rang_Role'] = ((df['Rang_Dans_Role'] / N) - 1) * -100
+    # 4. Position dans le meilleur rôle → convertie sur 100 par rapport au groupe de ce rôle
+    df['Score_Rang_Role'] = df.groupby('Role_Code_Majeur')['Role_Valeur_Max'].transform(
+        lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
+    )
 
     # Note finale = moyenne simple des 4 composantes
     df['Note_Moyenne_Stats'] = (
