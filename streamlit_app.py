@@ -95,6 +95,67 @@ def load_and_process_data():
     df["Âge"] = pd.to_numeric(df["Âge"], errors='coerce').fillna(22).astype(int)
 
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
+    df[player_col] = df[player_col].astype(str).str.upper().str.strip()
+
+    # --- INVISIBLE : BASE DE DONNÉES DES CLUBS ET DES COMPÉTITIONS ---
+    CLUBS_PREMIER_LEAGUE = [c.upper() for c in [
+        "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", "Burnley", "Chelsea", 
+        "Crystal Palace", "Everton", "Fulham", "Leeds United", "Liverpool", "Manchester City", 
+        "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland", 
+        "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"
+    ]]
+
+    CLUBS_LIGUE_1 = [c.upper() for c in [
+        "Angers SCO", "Auxerre", "Brest", "Le Havre", "Lens", "Lille", "Lorient", "Metz", 
+        "Monaco", "Nantes", "Nice", "Olympique Lyonnais", "Olympique Marseille", "PSG", 
+        "Paris", "Rennes", "Strasbourg", "Toulouse"
+    ]]
+
+    CLUBS_LIGA = [c.upper() for c in [
+        "Athletic Bilbao", "Atlético Madrid", "Barcelona", "Celta de Vigo", "Deportivo Alavés", 
+        "Elche", "Espanyol", "Getafe", "Girona", "Levante", "Mallorca", "Osasuna", "Rayo Vallecano", 
+        "Real Betis", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla", "Valencia", "Villarreal"
+    ]]
+
+    CLUBS_SERIE_A = [c.upper() for c in [
+        "Atalanta", "Bologna", "Cagliari", "Como", "Cremonese", "Fiorentina", "Genoa", 
+        "Hellas Verona", "Internazionale", "Juventus", "Lazio", "Lecce", "Milan", "Napoli", 
+        "Parma", "Pisa", "Roma", "Sassuolo", "Torino", "Udinese"
+    ]]
+
+    CLUBS_BUNDESLIGA = [c.upper() for c in [
+        "Augsburg", "Bayer Leverkusen", "Bayern München", "Borussia Dortmund", "Borussia M'gladbach", 
+        "Eintracht Frankfurt", "Freiburg", "Hamburger SV", "Heidenheim", "Hoffenheim", "Köln", 
+        "Mainz 05", "RB Leipzig", "St. Pauli", "Stuttgart", "Union Berlin", "Werder Bremen", "Wolfsburg"
+    ]]
+
+    CLUBS_LDC_QUART = [c.upper() for c in [
+        "PSG", "Liverpool", "Real Madrid", "Bayern München", "Arsenal", "Atlético Madrid", "Barcelona"
+    ]]
+
+    # Détection automatique de l'écriture de la colonne Équipe
+    team_col = 'Équipe' if 'Équipe' in df.columns else ('Equipe' if 'Equipe' in df.columns else None)
+
+    def attribuer_championnat(club):
+        club_clean = str(club).upper().strip()
+        if club_clean in CLUBS_PREMIER_LEAGUE: return "Premier League"
+        elif club_clean in CLUBS_LIGUE_1: return "Ligue 1"
+        elif club_clean in CLUBS_LIGA: return "La Liga"
+        elif club_clean in CLUBS_SERIE_A: return "Serie A"
+        elif club_clean in CLUBS_BUNDESLIGA: return "Bundesliga"
+        else: return "Autre"
+
+    def verifier_ldc(club):
+        club_clean = str(club).upper().strip()
+        return club_clean in CLUBS_LDC_QUART
+
+    # Assignation masquée des informations tactiques
+    if team_col:
+        df['Championnat'] = df[team_col].apply(attribuer_championnat)
+        df['LDC_Quart_Etape'] = df[team_col].apply(verifier_ldc)
+    else:
+        df['Championnat'] = "Autre"
+        df['LDC_Quart_Etape'] = False
 
     # --- RÔLES ---
     roles_mapping = {
@@ -114,9 +175,7 @@ def load_and_process_data():
     df['Rôle Majeur'] = df['Role_Code_Majeur'].map(roles_mapping)
     df['Role_Valeur_Max'] = df[role_cols].max(axis=1)
 
-# --- CALCUL DE LA NOTE GÉNÉRALE ---
-   # --- CALCUL DE LA NOTE GÉNÉRALE ---
-    # Au lieu d'un chiffre fixe, on compte automatiquement le nombre total de joueurs
+    # --- CALCUL DE LA NOTE GÉNÉRALE ---
     N = len(df) 
 
     # 1. Score M (déjà sur 100, valeur directe)
@@ -152,7 +211,6 @@ def load_and_process_data():
     }
     stats_cols = [c for c in stats_mapping.keys() if c in df.columns]
 
-    # Les valeurs UTIL→AERI sont déjà sur ~100 : on les arrondit simplement
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         df[f'{col} (Centile)'] = df[col].round().astype(int)
@@ -281,31 +339,21 @@ with tab2:
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
         # --- RECUPÉRATION DES DONNÉES EN DIRECT VIA SOCCERDATA ---
-        # On initialise les valeurs par défaut
         pied_fort = "INCONNU"
         valeur_marchande = "N/A"
         taille_joueur = "N/A"
         
         try:
             import soccerdata as sd
-            # On lance le scraper Transfermarkt (en ciblant les championnats majeurs pour aller vite)
-            tm = sd.Transfermarkt(leagues="ENG-Premier League", seasons=2025) # Modifiable selon tes besoins
-            
-            # On cherche les infos du joueur sélectionné
+            tm = sd.Transfermarkt(leagues="ENG-Premier League", seasons=2025)
             infos_scrap = tm.read_player_market_values()
-            
-            # On filtre sur notre joueur
             joueur_scrap = infos_scrap[infos_scrap.index.get_level_values('player').str.lower() == selected_player.lower()]
             
             if not joueur_scrap.empty:
-                # Si on trouve le joueur, on extrait ses vraies caractéristiques
-                # Note : à ajuster selon les colonnes exactes renvoyées par soccerdata
                 valeur_marchande = f"{joueur_scrap['market_value'].iloc[0] / 1_000_000:.0f} M €"
-                # Si soccerdata n'a pas le pied/taille dans cette table, on garde une valeur cohérente
                 pied_fort = "DROIT" 
                 taille_joueur = "1M82"
         except Exception as e:
-            # Si le scraping échoue ou internet rame, l'application ne plante pas, elle bascule sur ces valeurs :
             pied_fort = "DROIT"
             valeur_marchande = "N/A"
             taille_joueur = "1M80"
@@ -409,6 +457,7 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
+        
         # --- GRAPHIQUE BARRES ---
         categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
 
