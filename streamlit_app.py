@@ -97,7 +97,7 @@ def load_and_process_data():
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     df[player_col] = df[player_col].astype(str).str.upper().str.strip()
 
-    # --- INVISIBLE : BASE DE DONNÉES DES CLUBS ET DES COMPÉTITIONS ---
+    # --- BASE DE DONNÉES DES CLUBS ET DES COMPÉTITIONS ---
     CLUBS_PREMIER_LEAGUE = [c.upper() for c in [
         "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", "Burnley", "Chelsea", 
         "Crystal Palace", "Everton", "Fulham", "Leeds United", "Liverpool", "Manchester City", 
@@ -193,14 +193,36 @@ def load_and_process_data():
         lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
     )
 
-    # Note finale = moyenne simple des 4 composantes
-    df['Note_Moyenne_Stats'] = (
-        df['Score_M'] +
-        df['Score_Role'] +
-        df['Score_Rang_Global'] +
-        df['Score_Rang_Role']
-    ) / 4
-    df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
+    # 5. Application des valeurs par championnat
+    bareme_championnats = {
+        "Premier League": 100,
+        "La Liga": 95,
+        "Serie A": 95,
+        "Bundesliga": 94,
+        "Ligue 1": 93,
+        "Autre": 80
+    }
+    df['Note_Championnat'] = df['Championnat'].map(bareme_championnats).fillna(80)
+
+    # Note finale = moyenne simple intégrant la note Championnat et la note LDC si présente
+    def calculer_Note_Moyenne_Stats(row):
+        # Somme des 5 composantes de base (les 4 initiales + la note de championnat)
+        somme_notes = (
+            row['Score_M'] +
+            row['Score_Role'] +
+            row['Score_Rang_Global'] +
+            row['Score_Rang_Role'] +
+            row['Note_Championnat']
+        )
+        
+        # Si équipe LDC : on ajoute la 6ème valeur (97) et on divise par 6
+        if row['LDC_Quart_Etape']:
+            return round((somme_notes + 97) / 6, 1)
+        # Sinon : on divise par 5
+        else:
+            return round(somme_notes / 5, 1)
+
+    df['Note_Moyenne_Stats'] = df.apply(calculer_Note_Moyenne_Stats, axis=1)
 
     # --- STATISTIQUES DE COMPÉTENCES ---
     stats_mapping = {
