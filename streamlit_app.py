@@ -129,14 +129,14 @@ def load_and_process_data():
         lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
     )
 
-    # --- VALORISATION DE LA COMPLÉTITUDE MINUTIEUSE (STATS >= 70) ---
+    # --- VALORISATION DE L'EXCELLENCE PURE (STATS >= 80) ---
     competences_cles = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
     
-    # On compte le nombre exact de compétences >= 70
-    df['Comp_Au_Dessus_70'] = df[competences_cles].apply(lambda row: sum(row >= 70), axis=1)
+    # On compte le nombre exact de compétences >= 80
+    df['Comp_Au_Dessus_80'] = df[competences_cles].apply(lambda row: sum(row >= 80), axis=1)
     
-    # Chaque compétence validée apporte strictement +0.25 point au général
-    df['Bonus_Polyvalence'] = df['Comp_Au_Dessus_70'] * 0.25
+    # Chaque compétence ÉLITE validée apporte strictement +0.25 point au général
+    df['Bonus_Polyvalence'] = df['Comp_Au_Dessus_80'] * 0.25
 
     # Note de base (moyenne des 4 composantes)
     note_base = (
@@ -146,7 +146,7 @@ def load_and_process_data():
         df['Score_Rang_Role']
     ) / 4
 
-    # Note finale avec le bonus millimétré (plafonné à 100)
+    # Note finale avec le bonus élitiste (plafonné à 100)
     df['Note_Moyenne_Stats'] = (note_base + df['Bonus_Polyvalence']).clip(upper=100)
     df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
 
