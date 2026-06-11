@@ -115,39 +115,32 @@ def load_and_process_data():
     df['Role_Valeur_Max'] = df[role_cols].max(axis=1)
 
 # --- CALCUL DE LA NOTE GÉNÉRALE ---
+   # --- CALCUL DE LA NOTE GÉNÉRALE ---
+    # Au lieu d'un chiffre fixe, on compte automatiquement le nombre total de joueurs
     N = len(df) 
 
-    # 1. Score M et 2. Score Rôle
+    # 1. Score M (déjà sur 100, valeur directe)
     df['Score_M'] = df['M']
+
+    # 2. Meilleur rôle (déjà sur 100, valeur directe)
     df['Score_Role'] = df['Role_Valeur_Max']
 
-    # 3. Position globale et 4. Position dans le rôle
+    # 3. Position globale sur M → convertie sur 100
     df['Rang_Global_M'] = df['M'].rank(ascending=False, method='min')
     df['Score_Rang_Global'] = ((df['Rang_Global_M'] / N) - 1) * -100
 
+    # 4. Position dans le meilleur rôle → convertie sur 100 par rapport au groupe de ce rôle
     df['Score_Rang_Role'] = df.groupby('Role_Code_Majeur')['Role_Valeur_Max'].transform(
         lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
     )
 
-    # --- VALORISATION DE L'EXCELLENCE PURE (STATS >= 80) ---
-    competences_cles = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
-    
-    # On compte le nombre exact de compétences >= 80
-    df['Comp_Au_Dessus_80'] = df[competences_cles].apply(lambda row: sum(row >= 80), axis=1)
-    
-    # Chaque compétence ÉLITE validée apporte strictement +0.25 point au général
-    df['Bonus_Polyvalence'] = df['Comp_Au_Dessus_80'] * 0.25
-
-    # Note de base (moyenne des 4 composantes)
-    note_base = (
+    # Note finale = moyenne simple des 4 composantes
+    df['Note_Moyenne_Stats'] = (
         df['Score_M'] +
         df['Score_Role'] +
         df['Score_Rang_Global'] +
         df['Score_Rang_Role']
     ) / 4
-
-    # Note finale avec le bonus élitiste (plafonné à 100)
-    df['Note_Moyenne_Stats'] = (note_base + df['Bonus_Polyvalence']).clip(upper=100)
     df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
 
     # --- STATISTIQUES DE COMPÉTENCES ---
