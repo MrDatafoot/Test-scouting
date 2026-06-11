@@ -129,16 +129,14 @@ def load_and_process_data():
         lambda x: ((x.rank(ascending=False, method='min') / len(x)) - 1) * -100
     )
 
-    # --- VALORISATION DE LA COMPLÉTITUDE (TOUTES COMPÉTENCES) ---
-    # On liste absolument toutes les compétences, jeu aérien inclus
+    # --- VALORISATION DE LA COMPLÉTITUDE MINUTIEUSE (STATS >= 70) ---
     competences_cles = ['UTIL', 'ATTA', 'FINI', 'CREA', 'CONS', 'DRIB', 'PERC', 'ENGA', 'RECU', 'DEFE', 'ANTI', 'AERI']
     
-    # On calcule combien de compétences sont au-dessus de 50 (la moyenne)
-    df['Comp_Au_Dessus_50'] = df[competences_cles].apply(lambda row: sum(row >= 50), axis=1)
+    # On compte le nombre exact de compétences >= 70
+    df['Comp_Au_Dessus_70'] = df[competences_cles].apply(lambda row: sum(row >= 70), axis=1)
     
-    # On crée un bonus : par exemple +1 point de note générale pour chaque compétence au-dessus de 50 au-delà de 6 compétences
-    # Si Pedri valide 11 compétences sur 12, il prend un bonus de +5 points ((11 - 6) * 1) !
-    df['Bonus_Polyvalence'] = (df['Comp_Au_Dessus_50'] - 6).clip(lower=0) * 1.0
+    # Chaque compétence validée apporte strictement +0.25 point au général
+    df['Bonus_Polyvalence'] = df['Comp_Au_Dessus_70'] * 0.25
 
     # Note de base (moyenne des 4 composantes)
     note_base = (
@@ -148,7 +146,7 @@ def load_and_process_data():
         df['Score_Rang_Role']
     ) / 4
 
-    # Note finale avec application du bonus (on plafonne à 100 maximum)
+    # Note finale avec le bonus millimétré (plafonné à 100)
     df['Note_Moyenne_Stats'] = (note_base + df['Bonus_Polyvalence']).clip(upper=100)
     df['Note_Moyenne_Stats'] = df['Note_Moyenne_Stats'].round(1)
 
