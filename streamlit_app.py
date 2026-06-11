@@ -273,7 +273,7 @@ with tab1:
 with tab2:
     if len(filtered_df) > 0:
         player_list = sorted(filtered_df[player_col].unique())
-        selected_player = st.selectbox("🎯 Sélectionner un joueur pour charger sa fiche graphique", player_list)
+        selected_player = st.selectbox("Choisissez un joueur", player_list)
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
@@ -307,7 +307,7 @@ with tab2:
 <div style="color:#8b949e;">🏆 POS. GLB / RÔLE : <span style="color:#fff; font-weight:700;">{p_data['Score_Rang_Global']:.1f} | {p_data['Score_Rang_Role']:.1f}</span></div>
 </div>
 <div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE FINALE</div>
+<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE</div>
 <div style="font-size: 54px; font-weight: 900; color: {note_color}; line-height: 1; text-shadow: 0 0 15px {note_color}40;">{general_note}<span style="font-size: 18px; color: #8b949e; font-weight: 500;">/100</span></div>
 </div>
 </div>
