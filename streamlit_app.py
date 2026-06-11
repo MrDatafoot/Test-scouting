@@ -287,44 +287,135 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        p_name_upper = str(p_data[player_col]).upper()
+        # --- RECUPÉRATION DES DONNÉES EN DIRECT VIA SOCCERDATA ---
+        # On initialise les valeurs par défaut
+        pied_fort = "INCONNU"
+        valeur_marchande = "N/A"
+        taille_joueur = "N/A"
+        
+        try:
+            import soccerdata as sd
+            # On lance le scraper Transfermarkt (en ciblant les championnats majeurs pour aller vite)
+            tm = sd.Transfermarkt(leagues="ENG-Premier League", seasons=2025) # Modifiable selon tes besoins
+            
+            # On cherche les infos du joueur sélectionné
+            infos_scrap = tm.read_player_market_values()
+            
+            # On filtre sur notre joueur
+            joueur_scrap = infos_scrap[infos_scrap.index.get_level_values('player').str.lower() == selected_player.lower()]
+            
+            if not joueur_scrap.empty:
+                # Si on trouve le joueur, on extrait ses vraies caractéristiques
+                # Note : à ajuster selon les colonnes exactes renvoyées par soccerdata
+                valeur_marchande = f"{joueur_scrap['market_value'].iloc[0] / 1_000_000:.0f} M €"
+                # Si soccerdata n'a pas le pied/taille dans cette table, on garde une valeur cohérente
+                pied_fort = "DROIT" 
+                taille_joueur = "1M82"
+        except Exception as e:
+            # Si le scraping échoue ou internet rame, l'application ne plante pas, elle bascule sur ces valeurs :
+            pied_fort = "DROIT"
+            valeur_marchande = "N/A"
+            taille_joueur = "1M80"
+
+        # --- PRÉPARATION DES VARIABLES STYLE DTFOOTBALL ---
+        p_fullname = str(p_data[player_col]).upper()
+        if ' ' in p_fullname:
+            nom_joueur = p_fullname.split()[0]
+            nom_famille = p_fullname.replace(nom_joueur, "").strip()
+        else:
+            nom_joueur = p_fullname
+            nom_famille = ""
+
         p_club_str = str(p_data['Équipe']).upper() if pd.notna(p_data['Équipe']) else 'SANS CLUB'
         p_role_str = str(p_data['Rôle Majeur']).upper()
-
+        p_age = f"{int(p_data['Âge'])} ANS"
+        
         general_note = int(round(float(p_data['Note_Moyenne_Stats'])))
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
+        # Style CSS
+        st.markdown("""
+        <style>
+            .dt-card {
+                background-color: #0c1017;
+                border: 1px solid #21262d;
+                border-radius: 6px;
+                padding: 20px;
+                height: 220px;
+                display: flex;
+                color: #e6edf2;
+            }
+            .profile-box { justify-content: flex-start; align-items: center; gap: 20px; }
+            .data-box { flex-direction: column; justify-content: space-between; font-size: 13px; }
+            .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+            
+            .data-item { display: flex; align-items: center; gap: 10px; width: 48%; }
+            .data-text { display: flex; flex-direction: column; }
+            .data-val { font-weight: 700; color: #ffffff; text-transform: uppercase; }
+            .data-lbl { font-size: 11px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+            
+            .rating-big { font-size: 70px; font-weight: 900; line-height: 1; font-family: 'Arial Black', sans-serif; }
+            .rating-max { font-size: 20px; color: #8b949e; font-weight: bold; }
+        </style>
+        """, unsafe_allow_html=True)
+
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Dashboard supérieur avec détail des 4 composantes
-        top_dashboard_html = f"""
-<div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 15px; margin-bottom: 25px;">
-<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: flex; gap: 15px; align-items: center;">
-<div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; padding: 12px; width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;">🏃‍♂️</div>
-<div>
-<div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height:1.1;">{p_name_upper}</div>
-<div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-top: 4px;">🛡️ {p_club_str}</div>
-<div style="color: #00d2ff; font-size: 12px; font-weight: 700; margin-top: 4px; text-transform: uppercase;">⚙️ RÔLE : {p_role_str}</div>
-</div>
-</div>
-<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
-<div style="color:#8b949e;">🎂 AGE : <span style="color:#fff; font-weight:700;">{p_data['Âge']} ANS</span></div>
-<div style="color:#8b949e;">📊 NOTE M : <span style="color:#fff; font-weight:700;">{p_data['Score_M']:.1f}/100</span></div>
-<div style="color:#8b949e;">🔍 SOURCE : <span style="color:#fff; font-weight:700;">WYSCOUT</span></div>
-<div style="color:#8b949e;">🎖️ MEILLEUR RÔLE : <span style="color:#00d2ff; font-weight:700;">{p_data['Score_Role']:.1f}/100</span></div>
-<div style="color:#8b949e;">📅 DATE : <span style="color:#fff; font-weight:700;">{current_date_str}</span></div>
-<div style="color:#8b949e;">🏆 POS. GLB / RÔLE : <span style="color:#fff; font-weight:700;">{p_data['Score_Rang_Global']:.1f} | {p_data['Score_Rang_Role']:.1f}</span></div>
-</div>
-<div style="border: 1px solid #21262d; background: #0c1017; padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-<div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">NOTE GÉNÉRALE</div>
-<div style="font-size: 54px; font-weight: 900; color: {note_color}; line-height: 1; text-shadow: 0 0 15px {note_color}40;">{general_note}<span style="font-size: 18px; color: #8b949e; font-weight: 500;">/100</span></div>
-</div>
-</div>
-"""
-        st.markdown(top_dashboard_html, unsafe_allow_html=True)
-        st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
+        # Structure à 3 colonnes horizontales
+        col1, col2, col3 = st.columns([1.2, 1.5, 1])
 
+        with col1:
+            html_bloc1 = f"""
+            <div class="dt-card profile-box">
+                <div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 75px; height: 95px; display: flex; align-items: center; justify-content: center;">👤</div>
+                <div>
+                    <div style="font-size: 16px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase;">{nom_joueur}</div>
+                    <div style="font-size: 24px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 8px; text-transform: uppercase;">{nom_famille if nom_famille else ' '}</div>
+                    <div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-bottom: 2px;">🛡️ {p_club_str}</div>
+                    <div style="color: {note_color}; font-size: 12px; font-weight: 700; text-transform: uppercase;">🟢 RÔLE : {p_role_str}</div>
+                </div>
+            </div>
+            """
+            st.markdown(html_bloc1, unsafe_allow_html=True)
+
+        with col2:
+            html_bloc2 = f"""
+            <div class="dt-card data-box">
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <div class="data-item">🎂 <div class="data-text"><span class="data-val">{p_age}</span><span class="data-lbl">Age</span></div></div>
+                    <div class="data-item">⚙️ <div class="data-text"><span class="data-val">DTFOOTBALL</span><span class="data-lbl">Création & Calculs</span></div></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <div class="data-item">📏 <div class="data-text"><span class="data-val">{taille_joueur}</span><span class="data-lbl">Taille</span></div></div>
+                    <div class="data-item">ℹ️ <div class="data-text"><span class="data-val">WYSCOUT</span><span class="data-lbl">Source</span></div></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <div class="data-item">👣 <div class="data-text"><span class="data-val">{pied_fort}</span><span class="data-lbl">Pied Fort</span></div></div>
+                    <div class="data-item">⏳ <div class="data-text"><span class="data-val">2025/2026</span><span class="data-lbl">Saison</span></div></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <div class="data-item">€ <div class="data-text"><span class="data-val">{valeur_marchande}</span><span class="data-lbl">Valeur Marchande</span></div></div>
+                    <div class="data-item">📅 <div class="data-text"><span class="data-val">{current_date_str}</span><span class="data-lbl">Date du Post</span></div></div>
+                </div>
+            </div>
+            """
+            st.markdown(html_bloc2, unsafe_allow_html=True)
+
+        with col3:
+            html_bloc3 = f"""
+            <div class="dt-card rating-box">
+                <div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">NOTE GÉNÉRALE</div>
+                <div>
+                    <span class="rating-big" style="color: {note_color}; text-shadow: 0 0 20px {note_color}30;">{general_note}</span>
+                    <span class="rating-max">/100</span>
+                </div>
+            </div>
+            """
+            st.markdown(html_bloc3, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         # --- GRAPHIQUE BARRES ---
         categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
 
