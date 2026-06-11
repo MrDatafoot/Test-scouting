@@ -218,14 +218,33 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # --- ONGLET 1 : BASE GLOBALE ---
 with tab1:
     st.subheader("Base de Données des Joueurs (Notes Globales Ajustées)")
+    
     if len(display_df) > 0:
-        html_table = "<table class='fm-table' id='fmin-table'><thead><tr>"
+        # --- SYSTÈME DE TRI NATIF STREAMLIT ---
+        col_sort1, col_sort2 = st.columns([2, 1])
+        with col_sort1:
+            sort_options = {"Note Générale": "Note_Moyenne_Stats", "Âge": "Âge"}
+            for c in stats_cols:
+                sort_options[stats_mapping[c]] = f"{c} (Centile)"
+            
+            selected_sort_label = st.selectbox("📌 Trier la base par :", list(sort_options.keys()), index=0)
+            sort_column = sort_options[selected_sort_label]
+            
+        with col_sort2:
+            sort_order = st.selectbox("↕️ Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
+            ascending_order = True if sort_order == "Croissant (Min → Max)" else False
+
+        # On applique le tri ici
+        final_table_df = display_df.sort_values(by=sort_column, ascending=ascending_order)
+
+        # --- GÉNÉRATION DU TABLEAU HTML ---
+        html_table = "<table class='fm-table'><thead><tr>"
         html_table += "<th class='fm-th fm-th-left'>Joueur / Club</th><th class='fm-th'>Âge</th><th class='fm-th'>Rôle</th><th class='fm-th'>Général</th>"
         for c in stats_cols:
             html_table += f"<th class='fm-th'>{stats_mapping[c].upper()}</th>"
         html_table += "</tr></thead><tbody>"
 
-        for _, row in display_df.iterrows():
+        for _, row in final_table_df.iterrows():
             p_name = str(row[player_col]).upper()
             p_age = row["Âge"]
             p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
@@ -233,19 +252,19 @@ with tab1:
             p_note = row['Note_Moyenne_Stats']
             c_note = get_fm_color(p_note)
 
-            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left' data-sort='{p_name}'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
+            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
-            html_table += f"<td class='fm-td' data-sort='{p_note}'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{int(round(p_note))}</span></td>"
+            html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{int(round(p_note))}</span></td>"
 
             for c in stats_cols:
                 val = row[f"{c} (Centile)"]
                 c_val = get_fm_color(val)
-                html_table += f"<td class='fm-td' data-sort='{val}'><span class='fm-badge' style='border:2px solid {c_val}; color:{c_val} !important;'>{val}</span></td>"
+                html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_val}; color:{c_val} !important;'>{val}</span></td>"
             html_table += "</tr>"
         html_table += "</tbody></table>"
 
-        st.markdown(html_table + "<script>setTimeout(function(){ new Tablesort(document.getElementById('fmin-table'), {descending:true}); }, 300);</script>", unsafe_allow_html=True)
+        st.markdown(html_table, unsafe_allow_html=True)
     else:
         st.warning("Aucun joueur ne correspond aux critères.")
 
