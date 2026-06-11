@@ -332,13 +332,15 @@ with tab1:
             p_age = row["Âge"]
             p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
             p_role = row['Rôle Majeur']
-            p_note = row['Note_Moyenne_Stats']
-            c_note = get_fm_color(p_note)
+            
+            # CORRECTION : On aligne l'attribution de la couleur sur la valeur affichée (arrondie)
+            p_note_arrondie = int(round(row['Note_Moyenne_Stats']))
+            c_note = get_fm_color(p_note_arrondie)
 
             html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
-            html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{int(round(p_note))}</span></td>"
+            html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{p_note_arrondie}</span></td>"
 
             for c in stats_cols:
                 val = row[f"{c} (Centile)"]
@@ -581,10 +583,12 @@ with tab3:
         with cols_note[0]:
             st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GENERALE AJUSTÉE</div>", unsafe_allow_html=True)
         for idx, p_name in enumerate(selected_players):
-            val_note = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
+            # CORRECTION : On applique l'arrondi ici aussi pour éviter le décalage de couleur
+            val_note_brute = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
+            val_note = int(round(val_note_brute))
             c_note = get_fm_color(val_note)
             with cols_note[idx + 1]:
-                st.markdown(f"<div style='display:flex; justify-content:center; padding:6px 0;'><div style='border:2px solid {c_note}; color:{c_note}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:800; font-size:13px;'>{int(round(val_note))}</div></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='display:flex; justify-content:center; padding:6px 0;'><div style='border:2px solid {c_note}; color:{c_note}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:800; font-size:13px;'>{val_note}</div></div>", unsafe_allow_html=True)
 
         st.markdown("<hr style='border-color:#21262d; margin:10px 0;'>", unsafe_allow_html=True)
 
