@@ -206,7 +206,6 @@ def load_and_process_data():
 
     # Note finale = moyenne simple intégrant la note Championnat et la note LDC si présente
     def calculer_Note_Moyenne_Stats(row):
-        # Somme des 5 composantes de base (les 4 initiales + la note de championnat)
         somme_notes = (
             row['Score_M'] +
             row['Score_Role'] +
@@ -215,10 +214,8 @@ def load_and_process_data():
             row['Note_Championnat']
         )
         
-        # Si équipe LDC : on ajoute la 6ème valeur (97) et on divise par 6
         if row['LDC_Quart_Etape']:
             return round((somme_notes + 97) / 6, 1)
-        # Sinon : on divise par 5
         else:
             return round(somme_notes / 5, 1)
 
@@ -265,6 +262,7 @@ def get_fm_color(val):
 st.sidebar.markdown("<h2 style='color:#00d2ff; margin-bottom:0;'>BIENVENUE !</h2>", unsafe_allow_html=True)
 st.sidebar.markdown("---")
 
+# Filtres généraux
 search_query = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().lower()
 
 age_min, age_max = int(df["Âge"].min()), int(df["Âge"].max())
@@ -276,13 +274,33 @@ selected_clubs = st.sidebar.multiselect("Clubs / Équipes", options=available_cl
 available_roles = sorted(df['Rôle Majeur'].dropna().unique())
 selected_roles = st.sidebar.multiselect("Rôles Tactiques", options=available_roles)
 
+# --- DIRECTEMENT AFFICHÉ : FILTRES DE COMPÉTENCES AVANCÉS ---
+st.sidebar.markdown("---")
+st.sidebar.markdown("<h3 style='color:#00d2ff; font-size:14px; margin-bottom:5px; text-transform:uppercase;'>🎯 Compétences Minimales</h3>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='font-size:11px; color:#8b949e; margin-bottom:15px;'>Fixer un seuil requis par domaine :</p>", unsafe_allow_html=True)
+
+min_skills = {}
+for c in stats_cols:
+    label = stats_mapping[c]
+    # Les barres s'affichent directement les unes sous les autres dans la zone de gauche
+    min_skills[c] = st.sidebar.slider(f"{label}", 0, 100, 0, step=5)
+
+
+# --- APPLICATION DES FILTRES ---
 filtered_df = df[(df["Âge"] >= selected_age[0]) & (df["Âge"] <= selected_age[1])]
+
 if search_query:
     filtered_df = filtered_df[filtered_df[player_col].str.lower().str.contains(search_query, na=False)]
 if selected_clubs:
     filtered_df = filtered_df[filtered_df['Équipe'].isin(selected_clubs)]
 if selected_roles:
     filtered_df = filtered_df[filtered_df['Rôle Majeur'].isin(selected_roles)]
+
+# Application dynamique des filtres de compétences minimales
+for c in stats_cols:
+    val_filtre = min_skills[c]
+    if val_filtre > 0:
+        filtered_df = filtered_df[filtered_df[f"{c} (Centile)"] >= val_filtre]
 
 display_df = filtered_df.sort_values(by='Note_Moyenne_Stats', ascending=False)
 
@@ -303,7 +321,6 @@ with tab1:
     st.subheader("Base de Données des Joueurs")
     
     if len(display_df) > 0:
-        # --- SYSTÈME DE TRI NATIF STREAMLIT ---
         col_sort1, col_sort2 = st.columns([2, 1])
         with col_sort1:
             sort_options = {"Note Générale": "Note_Moyenne_Stats", "Âge": "Âge"}
@@ -317,7 +334,6 @@ with tab1:
             sort_order = st.selectbox("Ordre :", ["Décroissant (Max → Min)", "Croissant (Min → Max)"], index=0)
             ascending_order = True if sort_order == "Croissant (Min → Max)" else False
 
-        # On applique le tri ici
         final_table_df = display_df.sort_values(by=sort_column, ascending=ascending_order)
 
         # --- GÉNÉRATION DU TABLEAU HTML ---
@@ -333,11 +349,10 @@ with tab1:
             p_club = row['Équipe'] if 'Équipe' in row and pd.notna(row['Équipe']) else "Sans club"
             p_role = row['Rôle Majeur']
             
-            # CORRECTION : On aligne l'attribution de la couleur sur la valeur affichée (arrondie)
             p_note_arrondie = int(round(row['Note_Moyenne_Stats']))
             c_note = get_fm_color(p_note_arrondie)
 
-            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'> {p_club}</div></div></div></td>"
+            html_table += f"<tr class='fm-tr'><td class='fm-td fm-td-left'><div style='display:flex; align-items:center; gap:12px;'><div style='width:30px; height:30px; background:#0c1017; border:1px solid #21262d; border-radius:50%; display:flex; align-items:center; justify-content:center;'>🏃‍♂️</div><div><div style='font-weight:700; color:#fff;'>{p_name}</div><div style='font-size:11px; color:#00d2ff;'>🛡️ {p_club}</div></div></div></td>"
             html_table += f"<td class='fm-td' style='font-weight:600;'>{p_age}</td>"
             html_table += f"<td class='fm-td'><span style='color:#8b949e; font-size:12px; font-weight:600; background:#0c1017; padding:3px 8px; border-radius:4px; border:1px solid #21262d;'>{p_role}</span></td>"
             html_table += f"<td class='fm-td'><span class='fm-badge' style='border:2px solid {c_note}; color:{c_note} !important;'>{p_note_arrondie}</span></td>"
@@ -351,7 +366,7 @@ with tab1:
 
         st.markdown(html_table, unsafe_allow_html=True)
     else:
-        st.warning("Aucun joueur ne correspond aux critères.")
+        st.warning("Aucun joueur ne correspond aux critères filtrés.")
 
 
 # --- ONGLET 2 : PROFIL INDIVIDUEL ---
@@ -362,27 +377,10 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        # --- RECUPÉRATION DES DONNÉES EN DIRECT VIA SOCCERDATA ---
-        pied_fort = "INCONNU"
+        pied_fort = "DROIT"
         valeur_marchande = "N/A"
-        taille_joueur = "N/A"
-        
-        try:
-            import soccerdata as sd
-            tm = sd.Transfermarkt(leagues="ENG-Premier League", seasons=2025)
-            infos_scrap = tm.read_player_market_values()
-            joueur_scrap = infos_scrap[infos_scrap.index.get_level_values('player').str.lower() == selected_player.lower()]
-            
-            if not joueur_scrap.empty:
-                valeur_marchande = f"{joueur_scrap['market_value'].iloc[0] / 1_000_000:.0f} M €"
-                pied_fort = "DROIT" 
-                taille_joueur = "1M82"
-        except Exception as e:
-            pied_fort = "DROIT"
-            valeur_marchande = "N/A"
-            taille_joueur = "1M80"
+        taille_joueur = "1M80"
 
-        # --- PRÉPARATION DES VARIABLES STYLE DTFOOTBALL ---
         p_fullname = str(p_data[player_col]).upper()
         if ' ' in p_fullname:
             nom_joueur = p_fullname.split()[0]
@@ -399,7 +397,6 @@ with tab2:
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
-        # Style CSS
         st.markdown("""
         <style>
             .dt-card {
@@ -427,7 +424,6 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Structure à 3 colonnes horizontales
         col1, col2, col3 = st.columns([1.2, 1.5, 1])
 
         with col1:
@@ -482,7 +478,6 @@ with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
         
-        # --- GRAPHIQUE BARRES ---
         categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
 
         values = []
@@ -583,7 +578,6 @@ with tab3:
         with cols_note[0]:
             st.markdown("<div style='padding:12px 10px; font-size:12px; font-weight:800; color:#00d2ff; text-transform:uppercase;'>NOTE GENERALE AJUSTÉE</div>", unsafe_allow_html=True)
         for idx, p_name in enumerate(selected_players):
-            # CORRECTION : On applique l'arrondi ici aussi pour éviter le décalage de couleur
             val_note_brute = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
             val_note = int(round(val_note_brute))
             c_note = get_fm_color(val_note)
