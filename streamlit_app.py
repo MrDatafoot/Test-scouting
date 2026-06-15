@@ -377,7 +377,7 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        # Extraction directe en utilisant les vrais noms de colonnes de ton fichier (SL, BB, MN, ST, RC)
+        # Récupération sécurisée des scores de profils basés sur ton tableur (SL, BB, MN, ST, RC)
         roles_alternatifs = {
             "SECONDE LAME": int(float(p_data["SL"])) if "SL" in p_data and pd.notna(p_data["SL"]) else 0,
             "BOX TO BOX": int(float(p_data["BB"])) if "BB" in p_data and pd.notna(p_data["BB"]) else 0,
@@ -386,7 +386,6 @@ with tab2:
             "RÉCUPÉRATEUR": int(float(p_data["RC"])) if "RC" in p_data and pd.notna(p_data["RC"]) else 0
         }
 
-        # Formatage des chaînes textuelles du joueur
         p_fullname = str(p_data[player_col]).upper()
         if ' ' in p_fullname:
             nom_joueur = p_fullname.split()[0]
@@ -403,7 +402,6 @@ with tab2:
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
-        # Styles CSS
         st.markdown("""
         <style>
             .dt-card {
@@ -452,10 +450,11 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # Division propre en 4 colonnes pour intégrer la boîte des profils tactiques au milieu
         col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.3, 1.0])
 
         with col1:
-            st.markdown(f"""
+            html_bloc1 = f"""
             <div class="dt-card profile-box">
                 <div style="font-size: 50px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 90px; height: 120px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
                 <div style="display: flex; flex-direction: column; justify-content: center; min-width: 0;">
@@ -467,36 +466,39 @@ with tab2:
                     <div style="font-size: 12px; color: #ffffff; font-weight: 700;">🎂 {p_age}</div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(html_bloc1, unsafe_allow_html=True)
 
         with col2:
-            st.markdown(f"""
+            html_bloc2 = f"""
             <div class="dt-card data-box" style="padding-top: 14px; padding-bottom: 14px;">
                 <div class="data-item-mini">⚙️ <div class="data-text-mini"><span class="data-val-mini">DTFOOTBALL</span><span class="data-lbl-mini">Création & Calculs</span></div></div>
                 <div class="data-item-mini">⏳ <div class="data-text-mini"><span class="data-val-mini">2025/2026</span><span class="data-lbl-mini">Saison</span></div></div>
                 <div class="data-item-mini">ℹ️ <div class="data-text-mini"><span class="data-val-mini">WYSCOUT</span><span class="data-lbl-mini">Source</span></div></div>
                 <div class="data-item-mini">📅 <div class="data-text-mini"><span class="data-val-mini">{current_date_str}</span><span class="data-lbl-mini">Date du jour</span></div></div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(html_bloc2, unsafe_allow_html=True)
 
         with col3:
-            # Construction des badges HTML avec la coloration dynamique de get_fm_color
+            # Construction dynamique des badges avec la couleur FM correspondante
             b_html = ""
             for name, score in roles_alternatifs.items():
                 clr = get_fm_color(score)
                 b_html += f'<div class="role-badge-item"><div class="role-score-badge" style="border-color:{clr}; color:{clr};">{score}</div><div class="role-name-lbl">{name}</div></div>'
             
-            st.markdown(f"""
+            html_bloc_roles = f"""
             <div class="dt-card roles-box">
                 <div style="font-size: 15px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE PROFILS</div>
                 <div class="roles-grid">
                     {b_html}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(html_bloc_roles, unsafe_allow_html=True)
 
         with col4:
-            st.markdown(f"""
+            html_bloc3 = f"""
             <div class="dt-card rating-box">
                 <div style="font-size: 11px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">NOTE GÉNÉRALE</div>
                 <div style="display: flex; align-items: flex-end; justify-content: center;">
@@ -504,10 +506,97 @@ with tab2:
                     <span class="rating-max-new" style="margin-bottom: 4px;">/100</span>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(html_bloc3, unsafe_allow_html=True)
 
+        # --- RETOUR DU VISUEL COMPLET DES BARRES GRAPHIQUES ---
         st.markdown("<br>", unsafe_allow_html=True)
-        # ... Reste de ton code (graphiques en barres, etc.) ...
+        st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
+        
+        categories = [stats_mapping[c].upper().replace(" ", "<br>") if stats_mapping[c] != 'Défense' else "DÉFENSE" for c in stats_cols]
+
+        values = []
+        for c in stats_cols:
+            raw_val = p_data.get(f"{c} (Centile)", 0)
+            values.append(int(float(raw_val)) if pd.notna(raw_val) else 0)
+
+        colors = [get_fm_color(v) for v in values]
+
+        fig_bars = go.Figure()
+
+        # BARRES PRINCIPALES NETTES
+        fig_bars.add_trace(go.Bar(
+            x=categories, y=values,
+            marker=dict(color=colors, line=dict(width=0)),
+            text=None,
+            hovertemplate="<b>%{x}</b><br>Score: %{y}/100<extra></extra>"
+        ))
+
+        # --- GÉNÉRATION DES LIGNES D'ARRIÈRE-PLAN ---
+        lignes_background = [
+            (5, "dot", "#bf5af2"),   # Violet pointillé
+            (10, "solid", "#ff453a"), # Rouge plein
+            (20, "dot", "#ff453a"),   # Rouge pointillé
+            (30, "solid", "#ff9f0a"), # Orange plein
+            (40, "dot", "#ff9f0a"),   # Orange pointillé
+            (50, "solid", "#ffd60a"), # Jaune plein
+            (60, "dot", "#ffd60a"),   # Jaune pointillé
+            (70, "solid", "#00ff66"), # Vert plein
+            (80, "dot", "#00ff66"),   # Vert pointillé
+            (90, "solid", "#00d2ff"), # Bleu plein
+            (95, "dot", "#00d2ff"),   # Bleu pointillé
+            (100, "solid", "#ffffff") # Ligne blanche pleine à 100
+        ]
+
+        for val_y, style_ligne, couleur_ligne in lignes_background:
+            fig_bars.add_shape(
+                type="line", xref="paper", yref="y",
+                x0=0, x1=1, y0=val_y, y1=val_y,
+                line=dict(color=couleur_ligne, width=1, dash=style_ligne if style_ligne == "dot" else None),
+                layer='below'
+            )
+
+        # --- LABELS DE GAUCHE NETTOYÉS (SANS EMOJI) ---
+        tiers = [
+            {"y_text": 96, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
+            {"y_text": 81, "title": "FORT", "sub": "AU DESSUS", "color": "#00ff66"},
+            {"y_text": 61, "title": "CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y_text": 41, "title": "FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
+            {"y_text": 21, "title": "FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y_text": 6,  "title": "CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
+        ]
+
+        for t in tiers:
+            t_html = f"<b style='color:{t['color']}; font-size:14px; font-family:\"Arial Black\", sans-serif; font-weight:900; letter-spacing:1px;'>{t['title']}</b>"
+            if t["sub"]:
+                t_html += f"<br><span style='color:#8b949e; font-size:9px; font-weight:800; letter-spacing:0.5px;'>{t['sub']}</span>"
+
+            fig_bars.add_annotation(
+                xref="paper", yref="y",
+                x=-0.03, y=float(t["y_text"]),
+                text=t_html,
+                showarrow=False, xanchor="right", yanchor="middle"
+            )
+
+        fig_bars.update_layout(
+            plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=30, b=40, l=180, r=20),
+            height=650,
+            showlegend=False,
+            xaxis=dict(
+                tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'),
+                gridcolor='rgba(0,0,0,0)', fixedrange=True
+            ),
+            yaxis=dict(
+                range=[0, 110], gridcolor='rgba(0,0,0,0)',
+                tickvals=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+                tickfont=dict(color='#8b949e', size=11, family='Inter, Arial, sans-serif', weight='bold'),
+                fixedrange=True
+            )
+        )
+        st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
+    else:
+        st.warning("Aucun joueur trouvé.")
 
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
