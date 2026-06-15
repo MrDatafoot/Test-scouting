@@ -488,26 +488,27 @@ with tab2:
         colors = [get_fm_color(v) for v in values]
 
         fig_bars = go.Figure()
+
+        # EFFET D'OMBRE : Ajout d'une série de barres noires légèrement décalées en arrière-plan
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
-            marker=dict(color=colors, line=dict(width=0)),
+            marker=dict(color='rgba(0, 0, 0, 0.4)', line=dict(width=0)),
+            hoverinfo='skip',
+            offset=0.03 # Crée le décalage horizontal de l'ombre
+        ))
+
+        # BARRES PRINCIPALES (L'annotation de texte supérieure a été retirée)
+        fig_bars.add_trace(go.Bar(
+            x=categories, y=values,
+            marker=dict(
+                color=colors, 
+                line=dict(color='rgba(255,255,255,0.1)', width=1) # Léger contour brillant pour détacher la barre
+            ),
             text=None,
             hovertemplate="<b>%{x}</b><br>Score: %{y}/100<extra></extra>"
         ))
 
-        for idx, cat_name in enumerate(categories):
-            val_score = values[idx]
-            col_score = colors[idx]
-            fig_bars.add_annotation(
-                x=cat_name, y=val_score,
-                text=str(val_score),
-                showarrow=False,
-                yshift=10,
-                font=dict(size=12, color=col_score, family='Inter, Arial, sans-serif', weight='bold')
-            )
-
-        # --- GÉNÉRATION DES LIGNES D'ARRIÈRE-PLAN CONFORMES AU MODÈLE ---
-        # Configuration exacte : (Valeur, Type de ligne, Couleur)
+        # --- GÉNÉRATION DES LIGNES D'ARRIÈRE-PLAN ---
         lignes_background = [
             (5, "dot", "#bf5af2"),   # Violet pointillé
             (10, "solid", "#ff453a"), # Rouge plein
@@ -530,14 +531,14 @@ with tab2:
                 layer='below'
             )
 
-        # --- RE-POSITIONNEMENT DES TEXTES DE GAUCHE CENTRÉS SUR LES NOUVELLES ZONES ---
+        # --- LABELS DE GAUCHE NETTOYÉS (SANS EMOJI) ---
         tiers = [
-            {"y_text": 96, "title": "💎 ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
-            {"y_text": 81, "title": "🔼 FORT", "sub": "AU DESSUS", "color": "#00ff66"},
-            {"y_text": 61, "title": "⏸️ CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y_text": 41, "title": "🔽 FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
-            {"y_text": 21, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y_text": 6,  "title": "❌ CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
+            {"y_text": 96, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
+            {"y_text": 81, "title": "FORT", "sub": "AU DESSUS", "color": "#00ff66"},
+            {"y_text": 61, "title": "CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y_text": 41, "title": "FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
+            {"y_text": 21, "title": "FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y_text": 6,  "title": "CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
         ]
 
         for t in tiers:
@@ -557,14 +558,15 @@ with tab2:
             margin=dict(t=30, b=40, l=180, r=20),
             height=650,
             showlegend=False,
+            barmode='overlay', # Superpose les barres principales sur l'ombre d'arrière-plan
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'),
                 gridcolor='rgba(0,0,0,0)', fixedrange=True
             ),
             yaxis=dict(
-                range=[0, 110], gridcolor='rgba(0,0,0,0)', # Grille par défaut masquée pour laisser place aux nouvelles lignes personnalisées
-                tickvals=[0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100],
-                tickfont=dict(color='#8b949e', size=10, family='Inter, Arial, sans-serif', weight='bold'),
+                range=[0, 110], gridcolor='rgba(0,0,0,0)',
+                tickvals=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], # Uniquement les dizaines affichées sur l'axe
+                tickfont=dict(color='#8b949e', size=11, family='Inter, Arial, sans-serif', weight='bold'),
                 fixedrange=True
             )
         )
