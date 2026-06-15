@@ -559,6 +559,27 @@ with tab2:
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
+    
+    # Fonction locale de sécurisation des paliers de couleur
+    def get_comparator_color(v):
+        try:
+            val_num = int(float(v))
+        except:
+            val_num = 0
+            
+        if val_num < 10:
+            return "#bf5af2"  # Violet (0 à 9)
+        elif val_num < 30:
+            return "#ff453a"  # Rouge (10 à 29) -> Le 14 passera ici parfaitement
+        elif val_num < 50:
+            return "#ff9f0a"  # Orange (30 à 49)
+        elif val_num < 70:
+            return "#ffd60a"  # Jaune (50 à 69)
+        elif val_num < 90:
+            return "#00ff66"  # Vert (70 à 89)
+        else:
+            return "#00d2ff"  # Bleu (90 à 100)
+
     all_players = sorted(df[player_col].unique())
     selected_players = st.multiselect("Choisissez les joueurs à comparer side-by-side", options=all_players, default=all_players[:2])
 
@@ -581,7 +602,7 @@ with tab3:
         for idx, p_name in enumerate(selected_players):
             val_note_brute = df[df[player_col] == p_name].iloc[0]['Note_Moyenne_Stats']
             val_note = int(round(val_note_brute))
-            c_note = get_fm_color(val_note)
+            c_note = get_comparator_color(val_note) # Utilisation de la fonction locale corrigée
             with cols_note[idx + 1]:
                 st.markdown(f"<div style='display:flex; justify-content:center; padding:6px 0;'><div style='border:2px solid {c_note}; color:{c_note}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:800; font-size:13px;'>{val_note}</div></div>", unsafe_allow_html=True)
 
@@ -597,7 +618,7 @@ with tab3:
                     val = int(float(val_raw)) if pd.notna(val_raw) else 0
                 except:
                     val = 0
-                c_val = get_fm_color(val)
+                c_val = get_comparator_color(val) # Utilisation de la fonction locale corrigée
                 with cols_data[idx + 1]:
                     st.markdown(f"<div style='display:flex; justify-content:center; padding:4px 0;'><div style='border:2px solid {c_val}; color:{c_val}; padding:4px 0; border-radius:4px; width:44px; text-align:center; font-weight:700; font-size:13px;'>{val}</div></div>", unsafe_allow_html=True)
     else:
