@@ -377,6 +377,15 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
+        # Simulation de données pour le nouveau bloc "PERFORMANCE PROFILS" (À adapter avec tes vraies colonnes si besoin)
+        roles_alternatifs_mock = {
+            "SECONDE LAME": 44,
+            "BOX TO BOX": 66,
+            "MENEUR": 94,
+            "SENTINELLE": 84,
+            "RÉCUPÉRATEUR": 92
+        }
+
         p_fullname = str(p_data[player_col]).upper()
         if ' ' in p_fullname:
             nom_joueur = p_fullname.split()[0]
@@ -399,40 +408,57 @@ with tab2:
                 background-color: #0c1017;
                 border: 1px solid #21262d;
                 border-radius: 6px;
-                padding: 24px;
+                padding: 18px;
                 height: 220px;
                 display: flex;
                 color: #e6edf2;
             }
-            .profile-box { justify-content: flex-start; align-items: center; gap: 25px; }
-            .data-box { flex-direction: column; justify-content: space-around; }
+            .profile-box { justify-content: flex-start; align-items: center; gap: 20px; }
+            .data-box { flex-direction: column; justify-content: space-between; }
+            .roles-box { flex-direction: column; justify-content: flex-start; }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
             
-            /* Ajustements du bloc info milieu pour une meilleure visibilité */
-            .data-row { display: flex; justify-content: space-between; width: 100%; gap: 15px; }
-            .data-item { display: flex; align-items: center; gap: 12px; width: 48%; }
-            .data-text { display: flex; flex-direction: column; }
-            .data-val { font-size: 16px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
-            .data-lbl { font-size: 13px; color: #8b949e; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+            /* Styles pour la colonne Infos (Compacte) */
+            .data-item-mini { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+            .data-text-mini { display: flex; flex-direction: column; line-height: 1.2; }
+            .data-val-mini { font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
+            .data-lbl-mini { font-size: 10px; color: #8b949e; text-transform: uppercase; font-weight: 700; }
             
-            .rating-big { font-size: 70px; font-weight: 900; line-height: 1; font-family: 'Arial Black', sans-serif; }
-            .rating-max { font-size: 20px; color: #8b949e; font-weight: bold; }
+            /* Styles pour la grille du nouveau bloc Profils */
+            .roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+            .role-badge-item { display: flex; align-items: center; gap: 10px; }
+            .role-score-badge { 
+                border: 2px solid #fff; 
+                padding: 3px 6px; 
+                border-radius: 5px; 
+                font-weight: 800; 
+                font-size: 14px; 
+                min-width: 36px; 
+                text-align: center; 
+            }
+            .role-name-lbl { font-size: 14px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
+            
+            .rating-big-new { font-size: 85px; font-weight: 900; line-height: 0.9; font-family: 'Arial Black', sans-serif; }
+            .rating-max-new { font-size: 24px; color: #8b949e; font-weight: bold; }
         </style>
         """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1.4, 1.5, 0.9])
+        # Division de l'espace en 4 colonnes conformément à l'image IDEE.jpg
+        col1, col2, col3, col4 = st.columns([1.3, 1.0, 2.2, 1.1])
 
         with col1:
             html_bloc1 = f"""
             <div class="dt-card profile-box">
-                <div style="font-size: 60px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 110px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
+                <div style="font-size: 55px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 100px; height: 130px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
                 <div style="display: flex; flex-direction: column; justify-content: center;">
-                    <div style="font-size: 20px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase; letter-spacing: 0.5px;">{nom_joueur}</div>
-                    <div style="font-size: 32px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">{nom_famille if nom_famille else ' '}</div>
-                    <div style="color: #ff453a; font-size: 16px; font-weight: 800; margin-bottom: 5px; letter-spacing: 0.5px;">🛡️ {p_club_str}</div>
-                    <div style="color: {note_color}; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟢 RÔLE : {p_role_str}</div>
+                    <div style="font-size: 18px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase;">{nom_joueur}</div>
+                    <div style="font-size: 28px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 2px; text-transform: uppercase;">{nom_famille if nom_famille else ' '}</div>
+                    <div style="font-size: 14px; color: #ffffff; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">MILIEU DE TERRAIN</div>
+                    <div style="color: #ff453a; font-size: 14px; font-weight: 800; margin-bottom: 4px;">🛡️ {p_club_str}</div>
+                    <div style="color: {note_color}; font-size: 13px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">🟢 RÔLE : {p_role_str}</div>
+                    <div style="font-size: 13px; color: #ffffff; font-weight: 700;">🎂 {p_age}</div>
                 </div>
             </div>
             """
@@ -440,34 +466,48 @@ with tab2:
 
         with col2:
             html_bloc2 = f"""
-            <div class="dt-card data-box">
-                <div class="data-row">
-                    <div class="data-item">🎂 <div class="data-text"><span class="data-val">{p_age}</span><span class="data-lbl">Age</span></div></div>
-                    <div class="data-item">⚙️ <div class="data-text"><span class="data-val">DTFOOTBALL</span><span class="data-lbl">Création & Calculs</span></div></div>
-                </div>
-                <div class="data-row">
-                    <div class="data-item">ℹ️ <div class="data-text"><span class="data-val">WYSCOUT</span><span class="data-lbl">Source</span></div></div>
-                    <div class="data-item">⏳ <div class="data-text"><span class="data-val">2025/2026</span><span class="data-lbl">Saison</span></div></div>
-                </div>
-                <div class="data-row">
-                    <div class="data-item">📅 <div class="data-text"><span class="data-val">{current_date_str}</span><span class="data-lbl">Date du jour</span></div></div>
-                    <div class="data-item" style="visibility: hidden;"></div>
-                </div>
+            <div class="dt-card data-box" style="padding-top: 12px; padding-bottom: 12px;">
+                <div class="data-item-mini">⚙️ <div class="data-text-mini"><span class="data-val-mini">DTFOOTBALL</span><span class="data-lbl-mini">Création & Calculs</span></div></div>
+                <div class="data-item-mini">⏳ <div class="data-text-mini"><span class="data-val-mini">2025/2026</span><span class="data-lbl-mini">Saison</span></div></div>
+                <div class="data-item-mini">ℹ️ <div class="data-text-mini"><span class="data-val-mini">WYSCOUT</span><span class="data-lbl-mini">Source</span></div></div>
+                <div class="data-item-mini">📅 <div class="data-text-mini"><span class="data-val-mini">{current_date_str}</span><span class="data-lbl-mini">Date du jour</span></div></div>
             </div>
             """
             st.markdown(html_bloc2, unsafe_allow_html=True)
 
         with col3:
+            # Construction dynamique des lignes de badges rôles avec la couleur correspondante
+            badges_html = ""
+            for r_name, r_val in roles_alternatifs_mock.items():
+                r_color = get_fm_color(r_val)
+                badges_html += f"""
+                <div class="role-badge-item">
+                    <div class="role-score-badge" style="border-color: {r_color}; color: {r_color};">{r_val}</div>
+                    <div class="role-name-lbl">{r_name}</div>
+                </div>
+                """
+            
             html_bloc3 = f"""
-            <div class="dt-card rating-box">
-                <div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">NOTE GÉNÉRALE</div>
-                <div>
-                    <span class="rating-big" style="color: {note_color}; text-shadow: 0 0 20px {note_color}30;">{general_note}</span>
-                    <span class="rating-max">/100</span>
+            <div class="dt-card roles-box">
+                <div style="font-size: 16px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE PROFILS</div>
+                <div class="roles-grid">
+                    {badges_html}
                 </div>
             </div>
             """
             st.markdown(html_bloc3, unsafe_allow_html=True)
+
+        with col4:
+            html_bloc4 = f"""
+            <div class="dt-card rating-box">
+                <div style="font-size: 12px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">NOTE GÉNÉRALE</div>
+                <div style="display: flex; align-items: flex-end; justify-content: center;">
+                    <span class="rating-big-new" style="color: {note_color};">{general_note}</span>
+                    <span class="rating-max-new" style="margin-bottom: 6px;">/100</span>
+                </div>
+            </div>
+            """
+            st.markdown(html_bloc4, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>", unsafe_allow_html=True)
@@ -493,18 +533,18 @@ with tab2:
 
         # --- GÉNÉRATION DES LIGNES D'ARRIÈRE-PLAN ---
         lignes_background = [
-            (5, "dot", "#bf5af2"),   # Violet pointillé
-            (10, "solid", "#ff453a"), # Rouge plein
-            (20, "dot", "#ff453a"),   # Rouge pointillé
-            (30, "solid", "#ff9f0a"), # Orange plein
-            (40, "dot", "#ff9f0a"),   # Orange pointillé
-            (50, "solid", "#ffd60a"), # Jaune plein
-            (60, "dot", "#ffd60a"),   # Jaune pointillé
-            (70, "solid", "#00ff66"), # Vert plein
-            (80, "dot", "#00ff66"),   # Vert pointillé
-            (90, "solid", "#00d2ff"), # Bleu plein
-            (95, "dot", "#00d2ff"),   # Bleu pointillé
-            (100, "solid", "#ffffff") # Ligne blanche pleine à 100
+            (5, "dot", "#bf5af2"),
+            (10, "solid", "#ff453a"),
+            (20, "dot", "#ff453a"),
+            (30, "solid", "#ff9f0a"),
+            (40, "dot", "#ff9f0a"),
+            (50, "solid", "#ffd60a"),
+            (60, "dot", "#ffd60a"),
+            (70, "solid", "#00ff66"),
+            (80, "dot", "#00ff66"),
+            (90, "solid", "#00d2ff"),
+            (95, "dot", "#00d2ff"),
+            (100, "solid", "#ffffff")
         ]
 
         for val_y, style_ligne, couleur_ligne in lignes_background:
@@ -515,7 +555,7 @@ with tab2:
                 layer='below'
             )
 
-        # --- LABELS DE GAUCHE NETTOYÉS (SANS EMOJI) ---
+        # --- LABELS DE GAUCHE NETTOYÉS ---
         tiers = [
             {"y_text": 96, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
             {"y_text": 81, "title": "FORT", "sub": "AU DESSUS", "color": "#00ff66"},
