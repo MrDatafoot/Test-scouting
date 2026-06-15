@@ -377,8 +377,7 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        # 1. Extraction dynamique ou fallback sécurisé des profils alternatifs
-        # Nous récupérons les notes de manières dynamiques. Si tes colonnes portent d'autres noms, ajuste les clés ici :
+        # Récupération propre de tes valeurs de centiles
         roles_alternatifs = {
             "SECONDE LAME": int(float(p_data.get('Seconde Lame (Centile)', 44))) if pd.notna(p_data.get('Seconde Lame (Centile)')) else 44,
             "BOX TO BOX": int(float(p_data.get('Box to Box (Centile)', 66))) if pd.notna(p_data.get('Box to Box (Centile)')) else 66,
@@ -403,6 +402,7 @@ with tab2:
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
+        # Styles CSS injectés
         st.markdown("""
         <style>
             .dt-card {
@@ -420,30 +420,27 @@ with tab2:
             .roles-box { flex-direction: column; justify-content: flex-start; }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
             
-            /* Colonne Infos */
             .data-item-mini { display: flex; align-items: center; gap: 8px; }
             .data-text-mini { display: flex; flex-direction: column; line-height: 1.2; }
             .data-val-mini { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
             .data-lbl-mini { font-size: 9px; color: #8b949e; text-transform: uppercase; font-weight: 700; }
             
-            /* Grille Profils sans bug */
             .roles-grid { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
-                gap: 8px; 
-                margin-top: 12px; 
+                gap: 10px 15px; 
+                margin-top: 15px; 
                 width: 100%;
             }
-            .role-badge-item { display: flex; align-items: center; gap: 8px; }
+            .role-badge-item { display: flex; align-items: center; gap: 10px; }
             .role-score-badge { 
                 border: 2px solid #fff; 
-                padding: 2px 4px; 
+                padding: 2px 6px; 
                 border-radius: 5px; 
                 font-weight: 800; 
                 font-size: 13px; 
-                min-width: 32px; 
+                min-width: 38px; 
                 text-align: center; 
-                display: inline-block;
             }
             .role-name-lbl { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; white-space: nowrap; }
             
@@ -454,59 +451,52 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col1, col2, col3, col4 = st.columns([1.4, 1.0, 2.2, 1.0])
+        # Les 4 colonnes conformément à l'image IDEE.jpg
+        col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.3, 1.0])
 
         with col1:
-            html_bloc1 = f"""
+            st.markdown(f"""
             <div class="dt-card profile-box">
                 <div style="font-size: 50px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 90px; height: 120px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
                 <div style="display: flex; flex-direction: column; justify-content: center; min-width: 0;">
-                    <div style="font-size: 16px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;">{nom_joueur}</div>
-                    <div style="font-size: 24px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 2px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis;">{nom_famille if nom_famille else ' '}</div>
+                    <div style="font-size: 16px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase;">{nom_joueur}</div>
+                    <div style="font-size: 24px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 2px; text-transform: uppercase;">{nom_famille if nom_famille else ' '}</div>
                     <div style="font-size: 13px; color: #ffffff; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">MILIEU DE TERRAIN</div>
-                    <div style="color: #ff453a; font-size: 13px; font-weight: 800; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis;">🛡️ {p_club_str}</div>
-                    <div style="color: {note_color}; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis;">🟢 {p_role_str}</div>
+                    <div style="color: #ff453a; font-size: 13px; font-weight: 800; margin-bottom: 2px;">🛡️ {p_club_str}</div>
+                    <div style="color: {note_color}; font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px;">🟢 {p_role_str}</div>
                     <div style="font-size: 12px; color: #ffffff; font-weight: 700;">🎂 {p_age}</div>
                 </div>
             </div>
-            """
-            st.markdown(html_bloc1, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         with col2:
-            html_bloc2 = f"""
+            st.markdown(f"""
             <div class="dt-card data-box" style="padding-top: 14px; padding-bottom: 14px;">
                 <div class="data-item-mini">⚙️ <div class="data-text-mini"><span class="data-val-mini">DTFOOTBALL</span><span class="data-lbl-mini">Création & Calculs</span></div></div>
                 <div class="data-item-mini">⏳ <div class="data-text-mini"><span class="data-val-mini">2025/2026</span><span class="data-lbl-mini">Saison</span></div></div>
                 <div class="data-item-mini">ℹ️ <div class="data-text-mini"><span class="data-val-mini">WYSCOUT</span><span class="data-lbl-mini">Source</span></div></div>
                 <div class="data-item-mini">📅 <div class="data-text-mini"><span class="data-val-mini">{current_date_str}</span><span class="data-lbl-mini">Date du jour</span></div></div>
             </div>
-            """
-            st.markdown(html_bloc2, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         with col3:
-            # 2. Génération propre et isolée de la structure HTML des Badges
-            badges_html = ""
-            for r_name, r_val in roles_alternatifs.items():
-                r_color = get_fm_color(r_val)
-                badges_html += f"""
-                <div class="role-badge-item">
-                    <div class="role-score-badge" style="border-color: {r_color}; color: {r_color};">{r_val}</div>
-                    <div class="role-name-lbl">{r_name}</div>
-                </div>
-                """
+            # Construction sécurisée du bloc 3 pour éliminer l'affichage du texte brut
+            b_html = ""
+            for name, score in roles_alternatifs.items():
+                clr = get_fm_color(score)
+                b_html += f'<div class="role-badge-item"><div class="role-score-badge" style="border-color:{clr}; color:{clr};">{score}</div><div class="role-name-lbl">{name}</div></div>'
             
-            html_bloc3 = f"""
+            st.markdown(f"""
             <div class="dt-card roles-box">
                 <div style="font-size: 15px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE PROFILS</div>
                 <div class="roles-grid">
-                    {badges_html}
+                    {b_html}
                 </div>
             </div>
-            """
-            st.markdown(html_bloc3, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         with col4:
-            html_bloc4 = f"""
+            st.markdown(f"""
             <div class="dt-card rating-box">
                 <div style="font-size: 11px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">NOTE GÉNÉRALE</div>
                 <div style="display: flex; align-items: flex-end; justify-content: center;">
@@ -514,11 +504,10 @@ with tab2:
                     <span class="rating-max-new" style="margin-bottom: 4px;">/100</span>
                 </div>
             </div>
-            """
-            st.markdown(html_bloc4, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        # ... Reste du code inchangé pour le graphique go.Figure() ...
+        # ... Reste du code pour le graphique go.Figure() inchangé ...
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
