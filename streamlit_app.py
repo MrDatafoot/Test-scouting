@@ -377,15 +377,30 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        # Récupération propre de tes valeurs de centiles
+        # 1. RECHERCHE DYNAMIQUE DES COLONNES DE SCORES DE PROFILS
+        # Cette fonction cherche la colonne correspondante dans ton dataframe (ex: "Seconde Lame (Centile)" ou "Seconde Lame")
+        def get_player_profile_score(role_keyword, fallback_val=0):
+            for col in filtered_df.columns:
+                if role_keyword.lower() in col.lower() and "centile" in col.lower():
+                    val = p_data.get(col)
+                    return int(float(val)) if pd.notna(val) else fallback_val
+            # Si la colonne avec "(Centile)" n'est pas trouvée, on cherche sans le mot centile
+            for col in filtered_df.columns:
+                if role_keyword.lower() in col.lower():
+                    val = p_data.get(col)
+                    return int(float(val)) if pd.notna(val) else fallback_val
+            return fallback_val
+
+        # Extraction des vraies notes du joueur pour chaque profil
         roles_alternatifs = {
-            "SECONDE LAME": int(float(p_data.get('Seconde Lame (Centile)', 44))) if pd.notna(p_data.get('Seconde Lame (Centile)')) else 44,
-            "BOX TO BOX": int(float(p_data.get('Box to Box (Centile)', 66))) if pd.notna(p_data.get('Box to Box (Centile)')) else 66,
-            "MENEUR": int(float(p_data.get('Meneur (Centile)', 94))) if pd.notna(p_data.get('Meneur (Centile)')) else 94,
-            "SENTINELLE": int(float(p_data.get('Sentinelle (Centile)', 84))) if pd.notna(p_data.get('Sentinelle (Centile)')) else 84,
-            "RÉCUPÉRATEUR": int(float(p_data.get('Récupérateur (Centile)', 92))) if pd.notna(p_data.get('Récupérateur (Centile)')) else 92
+            "SECONDE LAME": get_player_profile_score("Seconde Lame"),
+            "BOX TO BOX": get_player_profile_score("Box to Box"),
+            "MENEUR": get_player_profile_score("Meneur"),
+            "SENTINELLE": get_player_profile_score("Sentinelle"),
+            "RÉCUPÉRATEUR": get_player_profile_score("Récupérateur")
         }
 
+        # Formatage des chaînes textuelles du joueur
         p_fullname = str(p_data[player_col]).upper()
         if ' ' in p_fullname:
             nom_joueur = p_fullname.split()[0]
@@ -402,7 +417,7 @@ with tab2:
         note_color = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
-        # Styles CSS injectés
+        # Styles CSS
         st.markdown("""
         <style>
             .dt-card {
@@ -451,7 +466,6 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Les 4 colonnes conformément à l'image IDEE.jpg
         col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.3, 1.0])
 
         with col1:
@@ -480,7 +494,7 @@ with tab2:
             """, unsafe_allow_html=True)
 
         with col3:
-            # Construction sécurisée du bloc 3 pour éliminer l'affichage du texte brut
+            # 2. CONVERSIONS DYNAMIQUES DES COULEURS DES BADGES SELON LE JOUEUR SÉLECTIONNÉ
             b_html = ""
             for name, score in roles_alternatifs.items():
                 clr = get_fm_color(score)
@@ -507,7 +521,8 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        # ... Reste du code pour le graphique go.Figure() inchangé ...
+        # ... Reste du code inchangé pour le graphique des barres ...
+
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
