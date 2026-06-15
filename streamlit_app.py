@@ -408,9 +408,9 @@ with tab2:
                 background-color: #0c1017;
                 border: 1px solid #21262d;
                 border-radius: 6px;
-                padding: 20px 16px;
-                /* Suppression de la hauteur fixe pour éviter que ça sorte du cadre */
-                min-height: 220px; 
+                padding: 16px;
+                /* Hauteur fixe harmonisée à 235px pour un alignement parfait des bas de blocs */
+                height: 235px; 
                 display: flex;
                 color: #e6edf2;
                 box-sizing: border-box;
@@ -418,11 +418,11 @@ with tab2:
             .profile-box { justify-content: flex-start; align-items: center; gap: 15px; }
             .data-box { flex-direction: column; justify-content: space-between; }
             
-            /* Ajustement de la boîte des profils */
+            /* Ajustement de la boîte des profils tactiques */
             .roles-box { 
                 flex-direction: column; 
                 justify-content: flex-start;
-                padding: 20px 24px !important;
+                padding: 18px 24px !important;
             }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
             
@@ -431,18 +431,18 @@ with tab2:
             .data-val-mini { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
             .data-lbl-mini { font-size: 9px; color: #8b949e; text-transform: uppercase; font-weight: 700; }
             
-            /* Grille mieux proportionnée */
+            /* Configuration précise de la grille */
             .roles-grid { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
-                gap: 16px 20px; 
-                margin-top: 18px; 
+                gap: 12px 20px; 
+                margin-top: 14px; 
                 width: 100%;
                 align-items: center;
             }
             .role-badge-item { display: flex; align-items: center; gap: 12px; }
             
-            /* Badges massifs corrigés */
+            /* Rectangles de scores massifs */
             .role-score-badge { 
                 border: 2px solid #fff; 
                 display: flex;
@@ -475,7 +475,7 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # col3 élargie à 3.2 pour offrir plus de largeur et éviter les retours à la ligne/débordements
+        # Les proportions des colonnes restent stables pour laisser de la largeur au profil
         col1, col2, col3, col4 = st.columns([1.5, 0.9, 3.2, 1.0])
 
         with col1:
@@ -622,7 +622,6 @@ with tab2:
         st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
         st.warning("Aucun joueur trouvé.")
-
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
