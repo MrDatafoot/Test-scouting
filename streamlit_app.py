@@ -450,7 +450,7 @@ with tab2:
                     <div class="data-item">⏳ <div class="data-text"><span class="data-val">2025/2026</span><span class="data-lbl">Saison</span></div></div>
                 </div>
                 <div class="data-row">
-                    <div class="data-item">📅 <div class="data-text"><span class="data-val">{current_date_str}</span><span class="data-lbl">Date du Post</span></div></div>
+                    <div class="data-item">📅 <div class="data-text"><span class="data-val">{current_date_str}</span><span class="data-lbl">Date du jour</span></div></div>
                     <div class="data-item" style="visibility: hidden;"></div>
                 </div>
             </div>
