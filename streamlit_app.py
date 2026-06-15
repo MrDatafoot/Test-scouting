@@ -377,27 +377,13 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        # 1. RECHERCHE DYNAMIQUE DES COLONNES DE SCORES DE PROFILS
-        # Cette fonction cherche la colonne correspondante dans ton dataframe (ex: "Seconde Lame (Centile)" ou "Seconde Lame")
-        def get_player_profile_score(role_keyword, fallback_val=0):
-            for col in filtered_df.columns:
-                if role_keyword.lower() in col.lower() and "centile" in col.lower():
-                    val = p_data.get(col)
-                    return int(float(val)) if pd.notna(val) else fallback_val
-            # Si la colonne avec "(Centile)" n'est pas trouvée, on cherche sans le mot centile
-            for col in filtered_df.columns:
-                if role_keyword.lower() in col.lower():
-                    val = p_data.get(col)
-                    return int(float(val)) if pd.notna(val) else fallback_val
-            return fallback_val
-
-        # Extraction des vraies notes du joueur pour chaque profil
+        # Extraction directe en utilisant les vrais noms de colonnes de ton fichier (SL, BB, MN, ST, RC)
         roles_alternatifs = {
-            "SECONDE LAME": get_player_profile_score("Seconde Lame"),
-            "BOX TO BOX": get_player_profile_score("Box to Box"),
-            "MENEUR": get_player_profile_score("Meneur"),
-            "SENTINELLE": get_player_profile_score("Sentinelle"),
-            "RÉCUPÉRATEUR": get_player_profile_score("Récupérateur")
+            "SECONDE LAME": int(float(p_data["SL"])) if "SL" in p_data and pd.notna(p_data["SL"]) else 0,
+            "BOX TO BOX": int(float(p_data["BB"])) if "BB" in p_data and pd.notna(p_data["BB"]) else 0,
+            "MENEUR": int(float(p_data["MN"])) if "MN" in p_data and pd.notna(p_data["MN"]) else 0,
+            "SENTINELLE": int(float(p_data["ST"])) if "ST" in p_data and pd.notna(p_data["ST"]) else 0,
+            "RÉCUPÉRATEUR": int(float(p_data["RC"])) if "RC" in p_data and pd.notna(p_data["RC"]) else 0
         }
 
         # Formatage des chaînes textuelles du joueur
@@ -494,7 +480,7 @@ with tab2:
             """, unsafe_allow_html=True)
 
         with col3:
-            # 2. CONVERSIONS DYNAMIQUES DES COULEURS DES BADGES SELON LE JOUEUR SÉLECTIONNÉ
+            # Construction des badges HTML avec la coloration dynamique de get_fm_color
             b_html = ""
             for name, score in roles_alternatifs.items():
                 clr = get_fm_color(score)
@@ -521,7 +507,7 @@ with tab2:
             """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        # ... Reste du code inchangé pour le graphique des barres ...
+        # ... Reste de ton code (graphiques en barres, etc.) ...
 
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
