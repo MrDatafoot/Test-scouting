@@ -506,25 +506,41 @@ with tab2:
                 font=dict(size=12, color=col_score, family='Inter, Arial, sans-serif', weight='bold')
             )
 
-        # --- RE-DESIGN ET AGRANDISSEMENT DES LABELS DE GAUCHE ---
+        # --- GÉNÉRATION DES LIGNES D'ARRIÈRE-PLAN CONFORMES AU MODÈLE ---
+        # Configuration exacte : (Valeur, Type de ligne, Couleur)
+        lignes_background = [
+            (5, "dot", "#bf5af2"),   # Violet pointillé
+            (10, "solid", "#ff453a"), # Rouge plein
+            (20, "dot", "#ff453a"),   # Rouge pointillé
+            (30, "solid", "#ff9f0a"), # Orange plein
+            (40, "dot", "#ff9f0a"),   # Orange pointillé
+            (50, "solid", "#ffd60a"), # Jaune plein
+            (60, "dot", "#ffd60a"),   # Jaune pointillé
+            (70, "solid", "#00ff66"), # Vert plein
+            (80, "dot", "#00ff66"),   # Vert pointillé
+            (90, "solid", "#00d2ff"), # Bleu plein
+            (95, "dot", "#00d2ff")    # Bleu pointillé
+        ]
+
+        for val_y, style_ligne, couleur_ligne in lignes_background:
+            fig_bars.add_shape(
+                type="line", xref="paper", yref="y",
+                x0=0, x1=1, y0=val_y, y1=val_y,
+                line=dict(color=couleur_ligne, width=1, dash=style_ligne if style_ligne == "dot" else None),
+                layer='below'
+            )
+
+        # --- RE-POSITIONNEMENT DES TEXTES DE GAUCHE CENTRÉS SUR LES NOUVELLES ZONES ---
         tiers = [
-            {"y0": 90, "y1": 100, "y_text": 95, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "FORT", "sub": "AU DESSUS", "color": "#00ff66"},
-            {"y0": 50, "y1": 70, "y_text": 60, "title": "CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": "FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
-            {"y0": 15, "y1": 30, "y_text": 22.5, "title": "FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
+            {"y_text": 96, "title": "💎 ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
+            {"y_text": 81, "title": "🔼 FORT", "sub": "AU DESSUS", "color": "#00ff66"},
+            {"y_text": 61, "title": "⏸️ CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
+            {"y_text": 41, "title": "🔽 FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
+            {"y_text": 21, "title": "⬇️ FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
+            {"y_text": 6,  "title": "❌ CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
         ]
 
         for t in tiers:
-            if t["y0"] > 0:
-                fig_bars.add_shape(
-                    type="line", xref="paper", yref="y",
-                    x0=0, x1=1, y0=t["y0"], y1=t["y0"],
-                    line=dict(color=t["color"], width=1, dash="dot"), layer='below'
-                )
-
-            # Passage en 14px de large, écriture ultra impactante 'Arial Black' (900 de graisse)
             t_html = f"<b style='color:{t['color']}; font-size:14px; font-family:\"Arial Black\", sans-serif; font-weight:900; letter-spacing:1px;'>{t['title']}</b>"
             if t["sub"]:
                 t_html += f"<br><span style='color:#8b949e; font-size:9px; font-weight:800; letter-spacing:0.5px;'>{t['sub']}</span>"
@@ -538,7 +554,7 @@ with tab2:
 
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=180, r=20), # Marge à 180px pour accueillir le texte plus large sans coupure
+            margin=dict(t=30, b=40, l=180, r=20),
             height=650,
             showlegend=False,
             xaxis=dict(
@@ -546,9 +562,9 @@ with tab2:
                 gridcolor='rgba(0,0,0,0)', fixedrange=True
             ),
             yaxis=dict(
-                range=[0, 110], gridcolor='#161b22',
-                tickvals=[0, 15, 30, 50, 70, 90, 100],
-                tickfont=dict(color='#8b949e', size=11, family='Inter, Arial, sans-serif', weight='bold'),
+                range=[0, 110], gridcolor='rgba(0,0,0,0)', # Grille par défaut masquée pour laisser place aux nouvelles lignes personnalisées
+                tickvals=[0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100],
+                tickfont=dict(color='#8b949e', size=10, family='Inter, Arial, sans-serif', weight='bold'),
                 fixedrange=True
             )
         )
