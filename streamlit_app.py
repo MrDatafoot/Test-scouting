@@ -506,13 +506,14 @@ with tab2:
                 font=dict(size=12, color=col_score, family='Inter, Arial, sans-serif', weight='bold')
             )
 
+        # --- RE-DESIGN ET AGRANDISSEMENT DES LABELS DE GAUCHE ---
         tiers = [
-            {"y0": 90, "y1": 100, "y_text": 95, "title": "ELITE", "sub": "", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "FORT", "sub": "SUR LA MOYENNE", "color": "#00ff66"},
+            {"y0": 90, "y1": 100, "y_text": 95, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": "FORT", "sub": "HAUT DESSUS", "color": "#00ff66"},
             {"y0": 50, "y1": 70, "y_text": 60, "title": "CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
-            {"y0": 30, "y1": 50, "y_text": 40, "title": "FRAGILE", "sub": "SOUS LA MOYENNE", "color": "#ff9f0a"},
+            {"y0": 30, "y1": 50, "y_text": 40, "title": "FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
             {"y0": 15, "y1": 30, "y_text": 22.5, "title": "FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
-            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "CRITIQUE", "sub": "", "color": "#bf5af2"}
+            {"y0": 0, "y1": 15, "y_text": 7.5, "title": "CRITIQUE", "sub": "ALERTE DATA", "color": "#bf5af2"}
         ]
 
         for t in tiers:
@@ -523,21 +524,22 @@ with tab2:
                     line=dict(color=t["color"], width=1, dash="dot"), layer='below'
                 )
 
-            t_html = f"<b style='color:{t['color']}; font-size:11px; font-family:\'Inter\', sans-serif;'>{t['title']}</b>"
+            # Passage en 14px de large, écriture ultra impactante 'Arial Black' (900 de graisse)
+            t_html = f"<b style='color:{t['color']}; font-size:14px; font-family:\"Arial Black\", sans-serif; font-weight:900; letter-spacing:1px;'>{t['title']}</b>"
             if t["sub"]:
-                t_html += f"<br><span style='color:#8b949e; font-size:8px; font-weight:700;'>{t['sub']}</span>"
+                t_html += f"<br><span style='color:#8b949e; font-size:9px; font-weight:800; letter-spacing:0.5px;'>{t['sub']}</span>"
 
             fig_bars.add_annotation(
                 xref="paper", yref="y",
-                x=-0.02, y=float(t["y_text"]),
+                x=-0.03, y=float(t["y_text"]),
                 text=t_html,
                 showarrow=False, xanchor="right", yanchor="middle"
             )
 
         fig_bars.update_layout(
             plot_bgcolor='#05070a', paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=30, b=40, l=125, r=20),
-            height=630,
+            margin=dict(t=30, b=40, l=180, r=20), # Marge à 180px pour accueillir le texte plus large sans coupure
+            height=650,
             showlegend=False,
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'),
@@ -546,14 +548,13 @@ with tab2:
             yaxis=dict(
                 range=[0, 110], gridcolor='#161b22',
                 tickvals=[0, 15, 30, 50, 70, 90, 100],
-                tickfont=dict(color='#8b949e', size=10, family='Inter, Arial, sans-serif'),
+                tickfont=dict(color='#8b949e', size=11, family='Inter, Arial, sans-serif', weight='bold'),
                 fixedrange=True
             )
         )
         st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
         st.warning("Aucun joueur trouvé.")
-
 
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
