@@ -416,7 +416,13 @@ with tab2:
             }
             .profile-box { justify-content: flex-start; align-items: center; gap: 15px; }
             .data-box { flex-direction: column; justify-content: space-between; }
-            .roles-box { flex-direction: column; justify-content: flex-start; }
+            
+            /* Section Performance Profils rééquilibrée et agrandie */
+            .roles-box { 
+                flex-direction: column; 
+                justify-content: flex-start; 
+                padding: 20px 24px !important;
+            }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
             
             .data-item-mini { display: flex; align-items: center; gap: 8px; }
@@ -424,24 +430,42 @@ with tab2:
             .data-val-mini { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
             .data-lbl-mini { font-size: 9px; color: #8b949e; text-transform: uppercase; font-weight: 700; }
             
+            /* Grille espacée et élargie comme sur le modèle */
             .roles-grid { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
-                gap: 10px 15px; 
-                margin-top: 15px; 
+                gap: 16px 28px; 
+                margin-top: 18px; 
                 width: 100%;
+                align-items: center;
             }
-            .role-badge-item { display: flex; align-items: center; gap: 10px; }
+            .role-badge-item { display: flex; align-items: center; gap: 14px; }
+            
+            /* Rectangles de scores massifs (Format 55x42 style IDEE) */
             .role-score-badge { 
                 border: 2px solid #fff; 
-                padding: 2px 6px; 
-                border-radius: 5px; 
-                font-weight: 800; 
-                font-size: 13px; 
-                min-width: 38px; 
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 55px;
+                height: 42px;
+                border-radius: 6px; 
+                font-weight: 900; 
+                font-size: 1.35rem; 
+                font-family: 'Arial Black', sans-serif;
                 text-align: center; 
+                flex-shrink: 0;
             }
-            .role-name-lbl { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; white-space: nowrap; }
+            
+            /* Écritures des rôles plus grandes et imposantes */
+            .role-name-lbl { 
+                font-size: 1.2rem; 
+                font-weight: 800; 
+                color: #ffffff; 
+                text-transform: uppercase; 
+                white-space: nowrap; 
+                letter-spacing: 0.3px;
+            }
             
             .rating-big-new { font-size: 80px; font-weight: 900; line-height: 0.9; font-family: 'Arial Black', sans-serif; }
             .rating-max-new { font-size: 20px; color: #8b949e; font-weight: bold; }
@@ -450,8 +474,8 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Division propre en 4 colonnes pour intégrer la boîte des profils tactiques au milieu
-        col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.3, 1.0])
+        # Division en 4 colonnes bien proportionnées (col3 élargie à 2.8 pour accueillir les grands textes)
+        col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.8, 1.0])
 
         with col1:
             html_bloc1 = f"""
@@ -489,7 +513,7 @@ with tab2:
             
             html_bloc_roles = f"""
             <div class="dt-card roles-box">
-                <div style="font-size: 15px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE PROFILS</div>
+                <div style="font-size: 16px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE PROFILS</div>
                 <div class="roles-grid">
                     {b_html}
                 </div>
