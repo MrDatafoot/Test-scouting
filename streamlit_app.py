@@ -489,21 +489,10 @@ with tab2:
 
         fig_bars = go.Figure()
 
-        # EFFET D'OMBRE : Ajout d'une série de barres noires légèrement décalées en arrière-plan
+        # BARRES PRINCIPALES NETTES (Sans ombrages, sans chiffres au-dessus, sans bordures épaisses)
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
-            marker=dict(color='rgba(0, 0, 0, 0.4)', line=dict(width=0)),
-            hoverinfo='skip',
-            offset=0.03 # Crée le décalage horizontal de l'ombre
-        ))
-
-        # BARRES PRINCIPALES (L'annotation de texte supérieure a été retirée)
-        fig_bars.add_trace(go.Bar(
-            x=categories, y=values,
-            marker=dict(
-                color=colors, 
-                line=dict(color='rgba(255,255,255,0.1)', width=1) # Léger contour brillant pour détacher la barre
-            ),
+            marker=dict(color=colors, line=dict(width=0)),
             text=None,
             hovertemplate="<b>%{x}</b><br>Score: %{y}/100<extra></extra>"
         ))
@@ -520,7 +509,8 @@ with tab2:
             (70, "solid", "#00ff66"), # Vert plein
             (80, "dot", "#00ff66"),   # Vert pointillé
             (90, "solid", "#00d2ff"), # Bleu plein
-            (95, "dot", "#00d2ff")    # Bleu pointillé
+            (95, "dot", "#00d2ff"),   # Bleu pointillé
+            (100, "solid", "#ffffff") # Ligne blanche pleine à 100 (identique au niveau 0)
         ]
 
         for val_y, style_ligne, couleur_ligne in lignes_background:
@@ -558,14 +548,13 @@ with tab2:
             margin=dict(t=30, b=40, l=180, r=20),
             height=650,
             showlegend=False,
-            barmode='overlay', # Superpose les barres principales sur l'ombre d'arrière-plan
             xaxis=dict(
                 tickfont=dict(color='#ffffff', size=11, family='Inter, Arial, sans-serif', weight='bold'),
                 gridcolor='rgba(0,0,0,0)', fixedrange=True
             ),
             yaxis=dict(
                 range=[0, 110], gridcolor='rgba(0,0,0,0)',
-                tickvals=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], # Uniquement les dizaines affichées sur l'axe
+                tickvals=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
                 tickfont=dict(color='#8b949e', size=11, family='Inter, Arial, sans-serif', weight='bold'),
                 fixedrange=True
             )
