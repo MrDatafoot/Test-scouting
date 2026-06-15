@@ -377,10 +377,6 @@ with tab2:
 
         p_data = filtered_df[filtered_df[player_col] == selected_player].iloc[0]
 
-        pied_fort = "DROIT"
-        valeur_marchande = "N/A"
-        taille_joueur = "1M80"
-
         p_fullname = str(p_data[player_col]).upper()
         if ' ' in p_fullname:
             nom_joueur = p_fullname.split()[0]
@@ -403,19 +399,21 @@ with tab2:
                 background-color: #0c1017;
                 border: 1px solid #21262d;
                 border-radius: 6px;
-                padding: 20px;
+                padding: 24px;
                 height: 220px;
                 display: flex;
                 color: #e6edf2;
             }
-            .profile-box { justify-content: flex-start; align-items: center; gap: 20px; }
-            .data-box { flex-direction: column; justify-content: space-between; font-size: 13px; }
+            .profile-box { justify-content: flex-start; align-items: center; gap: 25px; }
+            .data-box { flex-direction: column; justify-content: space-around; }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
             
-            .data-item { display: flex; align-items: center; gap: 10px; width: 48%; }
+            /* Ajustements du bloc info milieu pour une meilleure visibilité */
+            .data-row { display: flex; justify-content: space-between; width: 100%; gap: 15px; }
+            .data-item { display: flex; align-items: center; gap: 12px; width: 48%; }
             .data-text { display: flex; flex-direction: column; }
-            .data-val { font-weight: 700; color: #ffffff; text-transform: uppercase; }
-            .data-lbl { font-size: 11px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+            .data-val { font-size: 16px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
+            .data-lbl { font-size: 13px; color: #8b949e; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
             
             .rating-big { font-size: 70px; font-weight: 900; line-height: 1; font-family: 'Arial Black', sans-serif; }
             .rating-max { font-size: 20px; color: #8b949e; font-weight: bold; }
@@ -424,17 +422,17 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1.2, 1.5, 1])
+        col1, col2, col3 = st.columns([1.4, 1.5, 0.9])
 
         with col1:
             html_bloc1 = f"""
             <div class="dt-card profile-box">
-                <div style="font-size: 40px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 75px; height: 95px; display: flex; align-items: center; justify-content: center;">👤</div>
-                <div>
-                    <div style="font-size: 16px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase;">{nom_joueur}</div>
-                    <div style="font-size: 24px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 8px; text-transform: uppercase;">{nom_famille if nom_famille else ' '}</div>
-                    <div style="color: #ff453a; font-size: 13px; font-weight: 700; margin-bottom: 2px;">🛡️ {p_club_str}</div>
-                    <div style="color: {note_color}; font-size: 12px; font-weight: 700; text-transform: uppercase;">🟢 RÔLE : {p_role_str}</div>
+                <div style="font-size: 60px; background: #05070a; border: 1px solid #21262d; border-radius: 6px; width: 110px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">👤</div>
+                <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 20px; color: #8b949e; font-weight: 700; line-height: 1; text-transform: uppercase; letter-spacing: 0.5px;">{nom_joueur}</div>
+                    <div style="font-size: 32px; color: #ffffff; font-weight: 900; line-height: 1.1; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">{nom_famille if nom_famille else ' '}</div>
+                    <div style="color: #ff453a; font-size: 16px; font-weight: 800; margin-bottom: 5px; letter-spacing: 0.5px;">🛡️ {p_club_str}</div>
+                    <div style="color: {note_color}; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟢 RÔLE : {p_role_str}</div>
                 </div>
             </div>
             """
@@ -443,21 +441,17 @@ with tab2:
         with col2:
             html_bloc2 = f"""
             <div class="dt-card data-box">
-                <div style="display: flex; justify-content: space-between; width: 100%;">
+                <div class="data-row">
                     <div class="data-item">🎂 <div class="data-text"><span class="data-val">{p_age}</span><span class="data-lbl">Age</span></div></div>
                     <div class="data-item">⚙️ <div class="data-text"><span class="data-val">DTFOOTBALL</span><span class="data-lbl">Création & Calculs</span></div></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <div class="data-item">📏 <div class="data-text"><span class="data-val">{taille_joueur}</span><span class="data-lbl">Taille</span></div></div>
+                <div class="data-row">
                     <div class="data-item">ℹ️ <div class="data-text"><span class="data-val">WYSCOUT</span><span class="data-lbl">Source</span></div></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <div class="data-item">👣 <div class="data-text"><span class="data-val">{pied_fort}</span><span class="data-lbl">Pied Fort</span></div></div>
                     <div class="data-item">⏳ <div class="data-text"><span class="data-val">2025/2026</span><span class="data-lbl">Saison</span></div></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <div class="data-item">€ <div class="data-text"><span class="data-val">{valeur_marchande}</span><span class="data-lbl">Valeur Marchande</span></div></div>
+                <div class="data-row">
                     <div class="data-item">📅 <div class="data-text"><span class="data-val">{current_date_str}</span><span class="data-lbl">Date du Post</span></div></div>
+                    <div class="data-item" style="visibility: hidden;"></div>
                 </div>
             </div>
             """
@@ -489,7 +483,7 @@ with tab2:
 
         fig_bars = go.Figure()
 
-        # BARRES PRINCIPALES NETTES (Sans ombrages, sans chiffres au-dessus, sans bordures épaisses)
+        # BARRES PRINCIPALES NETTES
         fig_bars.add_trace(go.Bar(
             x=categories, y=values,
             marker=dict(color=colors, line=dict(width=0)),
@@ -510,7 +504,7 @@ with tab2:
             (80, "dot", "#00ff66"),   # Vert pointillé
             (90, "solid", "#00d2ff"), # Bleu plein
             (95, "dot", "#00d2ff"),   # Bleu pointillé
-            (100, "solid", "#ffffff") # Ligne blanche pleine à 100 (identique au niveau 0)
+            (100, "solid", "#ffffff") # Ligne blanche pleine à 100
         ]
 
         for val_y, style_ligne, couleur_ligne in lignes_background:
@@ -562,7 +556,6 @@ with tab2:
         st.plotly_chart(fig_bars, use_container_width=True, config={'displayModeBar': False})
     else:
         st.warning("Aucun joueur trouvé.")
-
 # --- ONGLET 3 : COMPARATEUR ---
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
