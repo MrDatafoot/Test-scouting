@@ -408,8 +408,9 @@ with tab2:
                 background-color: #0c1017;
                 border: 1px solid #21262d;
                 border-radius: 6px;
-                padding: 16px;
-                height: 220px;
+                padding: 20px 16px;
+                /* Suppression de la hauteur fixe pour éviter que ça sorte du cadre */
+                min-height: 220px; 
                 display: flex;
                 color: #e6edf2;
                 box-sizing: border-box;
@@ -417,10 +418,10 @@ with tab2:
             .profile-box { justify-content: flex-start; align-items: center; gap: 15px; }
             .data-box { flex-direction: column; justify-content: space-between; }
             
-            /* Section Performance Profils rééquilibrée et agrandie */
+            /* Ajustement de la boîte des profils */
             .roles-box { 
                 flex-direction: column; 
-                justify-content: flex-start; 
+                justify-content: flex-start;
                 padding: 20px 24px !important;
             }
             .rating-box { flex-direction: column; justify-content: center; align-items: center; text-align: center; }
@@ -430,36 +431,36 @@ with tab2:
             .data-val-mini { font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; }
             .data-lbl-mini { font-size: 9px; color: #8b949e; text-transform: uppercase; font-weight: 700; }
             
-            /* Grille espacée et élargie comme sur le modèle */
+            /* Grille mieux proportionnée */
             .roles-grid { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
-                gap: 16px 28px; 
+                gap: 16px 20px; 
                 margin-top: 18px; 
                 width: 100%;
                 align-items: center;
             }
-            .role-badge-item { display: flex; align-items: center; gap: 14px; }
+            .role-badge-item { display: flex; align-items: center; gap: 12px; }
             
-            /* Rectangles de scores massifs (Format 55x42 style IDEE) */
+            /* Badges massifs corrigés */
             .role-score-badge { 
                 border: 2px solid #fff; 
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 55px;
-                height: 42px;
+                width: 52px;
+                height: 38px;
                 border-radius: 6px; 
                 font-weight: 900; 
-                font-size: 1.35rem; 
+                font-size: 1.3rem; 
                 font-family: 'Arial Black', sans-serif;
                 text-align: center; 
                 flex-shrink: 0;
             }
             
-            /* Écritures des rôles plus grandes et imposantes */
+            /* Labels des rôles */
             .role-name-lbl { 
-                font-size: 1.2rem; 
+                font-size: 1.15rem; 
                 font-weight: 800; 
                 color: #ffffff; 
                 text-transform: uppercase; 
@@ -474,8 +475,8 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Division en 4 colonnes bien proportionnées (col3 élargie à 2.8 pour accueillir les grands textes)
-        col1, col2, col3, col4 = st.columns([1.5, 1.0, 2.8, 1.0])
+        # col3 élargie à 3.2 pour offrir plus de largeur et éviter les retours à la ligne/débordements
+        col1, col2, col3, col4 = st.columns([1.5, 0.9, 3.2, 1.0])
 
         with col1:
             html_bloc1 = f"""
