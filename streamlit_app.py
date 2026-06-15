@@ -650,11 +650,15 @@ with tab4:
             color_continuous_scale='Viridis', labels={x_col: f"{x_label.upper()} (Score)", y_col: f"{y_label.upper()} (Score)"}
         )
         fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#ffffff')))
+        
         fig.update_layout(
             plot_bgcolor='#0c1017', paper_bgcolor='#05070a', font_color='#ffffff',
             xaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]),
-            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]), height=580
+            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]), 
+            height=780, # Augmentation de la hauteur pour étirer le graphique
+            showlegend=False, # Masque la légende classique
+            coloraxis_showscale=False # Retire la barre de couleur "Note_Moyenne_Stats" entourée à droite
         )
         fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
         fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
