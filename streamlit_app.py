@@ -509,7 +509,7 @@ with tab2:
         # --- RE-DESIGN ET AGRANDISSEMENT DES LABELS DE GAUCHE ---
         tiers = [
             {"y0": 90, "y1": 100, "y_text": 95, "title": "ELITE", "sub": "TOP MONDIAL", "color": "#00d2ff"},
-            {"y0": 70, "y1": 90, "y_text": 80, "title": "FORT", "sub": "HAUT DESSUS", "color": "#00ff66"},
+            {"y0": 70, "y1": 90, "y_text": 80, "title": "FORT", "sub": "AU DESSUS", "color": "#00ff66"},
             {"y0": 50, "y1": 70, "y_text": 60, "title": "CORRECT", "sub": "DANS LA MOYENNE", "color": "#ffd60a"},
             {"y0": 30, "y1": 50, "y_text": 40, "title": "FRAGILE", "sub": "SOUS MOYENNE", "color": "#ff9f0a"},
             {"y0": 15, "y1": 30, "y_text": 22.5, "title": "FAIBLE", "sub": "À AMÉLIORER", "color": "#ff453a"},
