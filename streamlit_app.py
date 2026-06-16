@@ -695,21 +695,22 @@ with tab3:
 with tab4:
     st.markdown("<h2 style='color:#ffffff; font-size:22px; font-weight:800; text-transform:uppercase;'>📊 Graphique d'Analyse à Deux Axes (Cross-Analyse)</h2>", unsafe_allow_html=True)
     
-    # 1. SÉLECTION DES AXES (Correction du .index)
+    # 1. SÉLECTION DES AXES (Limité strictement aux catégories de la fiche individuelle)
     col_x, col_y = st.columns(2)
     
-    # On isole les colonnes numériques utiles pour les axes (ex: scores de profils ou de stats)
-    # Tu peux adapter cette liste selon les colonnes réelles de ton fichier
-    colonnes_axes = [c for c in filtered_df.columns if c not in [player_col, 'Équipe', 'Rôle Majeur', 'Âge']]
+    # On utilise directement ta liste de colonnes de statistiques définies pour le profil individuel
+    colonnes_axes = stats_cols 
     
     with col_x:
-        default_x = "Construction"
-        idx_x = colonnes_axes.index(default_x) if default_x in colonnes_axes else 0
+        # On essaie de mettre "Construction" par défaut s'il est dans ta liste, sinon le premier élément
+        default_x = "Construction" if "Construction" in colonnes_axes else colonnes_axes[0]
+        idx_x = colonnes_axes.index(default_x)
         axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", colonnes_axes, index=idx_x)
         
     with col_y:
-        default_y = "Création"
-        idx_y = colonnes_axes.index(default_y) if default_y in colonnes_axes else 0
+        # On essaie de mettre "Création" par défaut s'il est dans ta liste, sinon le deuxième élément
+        default_y = "Création" if "Création" in colonnes_axes else (colonnes_axes[1] if len(colonnes_axes) > 1 else colonnes_axes[0])
+        idx_y = colonnes_axes.index(default_y)
         axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", colonnes_axes, index=idx_y)
 
     st.markdown("---")
@@ -749,7 +750,6 @@ with tab4:
             else:
                 plot_text.append("")
         else: # "Masquer tous les noms"
-            # On affiche quand même si le joueur est explicitement ciblé par les filtres du dessous
             if nom_j in joueurs_cibles or club_j in equipes_cibles:
                 plot_text.append(nom_j)
             else:
