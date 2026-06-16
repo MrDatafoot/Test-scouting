@@ -695,18 +695,26 @@ with tab3:
 with tab4:
     st.markdown("<h2 style='color:#ffffff; font-size:22px; font-weight:800; text-transform:uppercase;'>📊 Graphique d'Analyse à Deux Axes (Cross-Analyse)</h2>", unsafe_allow_html=True)
     
-    # 1. SÉLECTION DES AXES
+    # 1. SÉLECTION DES AXES (Correction du .index)
     col_x, col_y = st.columns(2)
+    
+    # On isole les colonnes numériques utiles pour les axes (ex: scores de profils ou de stats)
+    # Tu peux adapter cette liste selon les colonnes réelles de ton fichier
+    colonnes_axes = [c for c in filtered_df.columns if c not in [player_col, 'Équipe', 'Rôle Majeur', 'Âge']]
+    
     with col_x:
-        default_x = "Construction" if "Construction" in filtered_df.columns else filtered_df.columns[0]
-        axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", filtered_df.columns, index=list(filtered_df.columns).indexOf(default_x) if default_x in filtered_df.columns else 0)
+        default_x = "Construction"
+        idx_x = colonnes_axes.index(default_x) if default_x in colonnes_axes else 0
+        axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", colonnes_axes, index=idx_x)
+        
     with col_y:
-        default_y = "Création" if "Création" in filtered_df.columns else filtered_df.columns[0]
-        axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", filtered_df.columns, index=list(filtered_df.columns).indexOf(default_y) if default_y in filtered_df.columns else 0)
+        default_y = "Création"
+        idx_y = colonnes_axes.index(default_y) if default_y in colonnes_axes else 0
+        axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", colonnes_axes, index=idx_y)
 
     st.markdown("---")
     
-    # 2. PANNEAU DE CONTRÔLE DE L'AFFICHAGE DES NOMS & FILTRES TARGETS
+    # 2. PANNEAU DE CONTRÔLE DE L'AFFICHAGE DES NOMS
     st.markdown("<h4 style='color:#ffffff; font-size:14px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>⚙️ Options d'affichage des labels</h4>", unsafe_allow_html=True)
     
     c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 2.0, 2.0])
@@ -719,16 +727,14 @@ with tab4:
         )
         
     with c_ctrl2:
-        # Recherche par équipe pour afficher un groupe de joueurs d'un coup
         liste_equipes = sorted(filtered_df['Équipe'].dropna().unique()) if 'Équipe' in filtered_df.columns else []
         equipes_cibles = st.multiselect("Afficher les noms de l'équipe :", liste_equipes)
         
     with c_ctrl3:
-        # Recherche précise par joueur(s)
         liste_joueurs = sorted(filtered_df[player_col].unique())
         joueurs_cibles = st.multiselect("Chercher et afficher un joueur spécifique :", liste_joueurs)
 
-    # 3. PRÉPARATION DES LABELS (TEXT) SELON LES CHOIX DE L'UTILISATEUR
+    # 3. PRÉPARATION DES LABELS (TEXT) SELON LES FILTRES
     plot_text = []
     
     for idx, row in filtered_df.iterrows():
@@ -738,31 +744,26 @@ with tab4:
         if mode_label == "Afficher tous les noms":
             plot_text.append(nom_j)
         elif mode_label == "Sélection à la carte":
-            # On affiche si le joueur est sélectionné individuellement OU si son équipe est sélectionnée
             if nom_j in joueurs_cibles or club_j in equipes_cibles:
                 plot_text.append(nom_j)
             else:
                 plot_text.append("")
-        else:
-            # Mode "Masquer tous les noms" (mais on affiche quand même les joueurs ciblés par les filtres s'il y en a)
+        else: # "Masquer tous les noms"
+            # On affiche quand même si le joueur est explicitement ciblé par les filtres du dessous
             if nom_j in joueurs_cibles or club_j in equipes_cibles:
                 plot_text.append(nom_j)
             else:
                 plot_text.append("")
 
-    # Définition du mode Plotly (markers = juste le point, markers+text = point + nom)
-    text_mode = "markers+text"
-
-    # 4. CONSTRUCTION DU GRAPHIQUE AVEC PLOTLY
+    # 4. CONSTRUCTION DU GRAPHIQUE PLOTLY
     fig_quad = go.Figure()
 
-    # Couleurs basées sur la note moyenne stats globale du dataset
     scores_couleurs = filtered_df['Note_Moyenne_Stats'] if 'Note_Moyenne_Stats' in filtered_df.columns else [50]*len(filtered_df)
 
     fig_quad.add_trace(go.Scatter(
         x=filtered_df[axis_x],
         y=filtered_df[axis_y],
-        mode=text_mode,
+        mode="markers+text",
         text=plot_text,
         textposition="top center",
         textfont=dict(color="#ffffff", size=10, family="Inter, Arial, sans-serif"),
@@ -785,7 +786,6 @@ with tab4:
             ),
             line=dict(width=1, color='#0d1117')
         ),
-        # Configuration propre de la boîte de survol (Hover) pour l'analyse au clic/survol
         hovertemplate=(
             "<b>%{customdata[0]}</b><br>" +
             "🛡️ Club : %{customdata[1]}<br>" +
@@ -805,7 +805,6 @@ with tab4:
     fig_quad.add_shape(type="line", x0=50, x1=50, y0=0, y1=100, line=dict(color="#8b949e", width=1, dash="dash"))
     fig_quad.add_shape(type="line", x0=0, x1=100, y0=50, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
 
-    # Style et mise en page du layout
     fig_quad.update_layout(
         plot_bgcolor='#0c1017',
         paper_bgcolor='rgba(0,0,0,0)',
