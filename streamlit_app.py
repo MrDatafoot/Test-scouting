@@ -693,38 +693,138 @@ with tab3:
 
 # --- ONGLET 4 : ANALYSE QUADRANT ---
 with tab4:
-    st.subheader("📈 Graphique d'Analyse à Deux Axes (Cross-Analyse)")
-    reverse_mapping = {v: k for k, v in stats_mapping.items()}
-    options_labels = list(stats_mapping.values())
+    st.markdown("<h2 style='color:#ffffff; font-size:22px; font-weight:800; text-transform:uppercase;'>📊 Graphique d'Analyse à Deux Axes (Cross-Analyse)</h2>", unsafe_allow_html=True)
+    
+    # 1. SÉLECTION DES AXES
+    col_x, col_y = st.columns(2)
+    with col_x:
+        default_x = "Construction" if "Construction" in filtered_df.columns else filtered_df.columns[0]
+        axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", filtered_df.columns, index=list(filtered_df.columns).indexOf(default_x) if default_x in filtered_df.columns else 0)
+    with col_y:
+        default_y = "Création" if "Création" in filtered_df.columns else filtered_df.columns[0]
+        axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", filtered_df.columns, index=list(filtered_df.columns).indexOf(default_y) if default_y in filtered_df.columns else 0)
 
-    graph_col1, graph_col2 = st.columns(2)
-    with graph_col1: x_label = st.selectbox("Sélectionner l'Axe X (Horizontal)", options_labels, index=4)
-    with graph_col2: y_label = st.selectbox("Sélectionner l'Axe Y (Vertical)", options_labels, index=3)
-
-    x_col = f"{reverse_mapping[x_label]} (Centile)"
-    y_col = f"{reverse_mapping[y_label]} (Centile)"
-
-    if len(filtered_df) > 0:
-        plot_df = filtered_df.copy()
-        plot_df['Club_Label'] = plot_df['Équipe'].fillna("Sans club")
-
-        plot_df[x_col] = pd.to_numeric(plot_df[x_col], errors='coerce').fillna(0)
-        plot_df[y_col] = pd.to_numeric(plot_df[y_col], errors='coerce').fillna(0)
-
-        fig = px.scatter(
-            plot_df, x=x_col, y=y_col, text=player_col, color='Note_Moyenne_Stats',
-            color_continuous_scale='Viridis', labels={x_col: f"{x_label.upper()} (Score)", y_col: f"{y_label.upper()} (Score)"}
+    st.markdown("---")
+    
+    # 2. PANNEAU DE CONTRÔLE DE L'AFFICHAGE DES NOMS & FILTRES TARGETS
+    st.markdown("<h4 style='color:#ffffff; font-size:14px; font-weight:800; text-transform:uppercase; margin-bottom:10px;'>⚙️ Options d'affichage des labels</h4>", unsafe_allow_html=True)
+    
+    c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 2.0, 2.0])
+    
+    with c_ctrl1:
+        mode_label = st.radio(
+            "Affichage du texte sur le graphique",
+            ["Masquer tous les noms", "Afficher tous les noms", "Sélection à la carte"],
+            index=0
         )
-        fig.update_traces(textposition='top center', marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#ffffff')))
         
-        fig.update_layout(
-            plot_bgcolor='#0c1017', paper_bgcolor='#05070a', font_color='#ffffff',
-            xaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]),
-            yaxis=dict(gridcolor='#161b22', zerolinecolor='#21262d', range=[-5, 105]), 
-            height=780, # Augmentation de la hauteur pour étirer le graphique
-            showlegend=False, # Masque la légende classique
-            coloraxis_showscale=False # Retire la barre de couleur "Note_Moyenne_Stats" entourée à droite
+    with c_ctrl2:
+        # Recherche par équipe pour afficher un groupe de joueurs d'un coup
+        liste_equipes = sorted(filtered_df['Équipe'].dropna().unique()) if 'Équipe' in filtered_df.columns else []
+        equipes_cibles = st.multiselect("Afficher les noms de l'équipe :", liste_equipes)
+        
+    with c_ctrl3:
+        # Recherche précise par joueur(s)
+        liste_joueurs = sorted(filtered_df[player_col].unique())
+        joueurs_cibles = st.multiselect("Chercher et afficher un joueur spécifique :", liste_joueurs)
+
+    # 3. PRÉPARATION DES LABELS (TEXT) SELON LES CHOIX DE L'UTILISATEUR
+    plot_text = []
+    
+    for idx, row in filtered_df.iterrows():
+        nom_j = str(row[player_col])
+        club_j = str(row['Équipe']) if 'Équipe' in row else ''
+        
+        if mode_label == "Afficher tous les noms":
+            plot_text.append(nom_j)
+        elif mode_label == "Sélection à la carte":
+            # On affiche si le joueur est sélectionné individuellement OU si son équipe est sélectionnée
+            if nom_j in joueurs_cibles or club_j in equipes_cibles:
+                plot_text.append(nom_j)
+            else:
+                plot_text.append("")
+        else:
+            # Mode "Masquer tous les noms" (mais on affiche quand même les joueurs ciblés par les filtres s'il y en a)
+            if nom_j in joueurs_cibles or club_j in equipes_cibles:
+                plot_text.append(nom_j)
+            else:
+                plot_text.append("")
+
+    # Définition du mode Plotly (markers = juste le point, markers+text = point + nom)
+    text_mode = "markers+text"
+
+    # 4. CONSTRUCTION DU GRAPHIQUE AVEC PLOTLY
+    fig_quad = go.Figure()
+
+    # Couleurs basées sur la note moyenne stats globale du dataset
+    scores_couleurs = filtered_df['Note_Moyenne_Stats'] if 'Note_Moyenne_Stats' in filtered_df.columns else [50]*len(filtered_df)
+
+    fig_quad.add_trace(go.Scatter(
+        x=filtered_df[axis_x],
+        y=filtered_df[axis_y],
+        mode=text_mode,
+        text=plot_text,
+        textposition="top center",
+        textfont=dict(color="#ffffff", size=10, family="Inter, Arial, sans-serif"),
+        marker=dict(
+            size=11,
+            color=scores_couleurs,
+            colorscale=[
+                [0.0, '#bf5af2'],  # Critique (Violet)
+                [0.3, '#ff453a'],  # Faible (Rouge)
+                [0.5, '#ff9f0a'],  # Fragile (Orange)
+                [0.6, '#ffd60a'],  # Correct (Jaune)
+                [0.8, '#00ff66'],  # Fort (Vert)
+                [1.0, '#00d2ff']   # Elite (Bleu)
+            ],
+            showscale=True,
+            colorbar=dict(
+                title="Note Moyenne",
+                thickness=15,
+                tickfont=dict(color='#8b949e')
+            ),
+            line=dict(width=1, color='#0d1117')
+        ),
+        # Configuration propre de la boîte de survol (Hover) pour l'analyse au clic/survol
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>" +
+            "🛡️ Club : %{customdata[1]}<br>" +
+            f"⚡ {axis_x} : %{{x}}/100<br>" +
+            f"🎯 {axis_y} : %{{y}}/100<br>" +
+            "📈 Note Globale : %{customdata[2]}/100" +
+            "<extra></extra>"
+        ),
+        customdata=list(zip(
+            filtered_df[player_col], 
+            filtered_df['Équipe'] if 'Équipe' in filtered_df.columns else ['Sans Club']*len(filtered_df),
+            filtered_df['Note_Moyenne_Stats'].round(1) if 'Note_Moyenne_Stats' in filtered_df.columns else [0]*len(filtered_df)
+        ))
+    ))
+
+    # Lignes de séparation médianes (à 50)
+    fig_quad.add_shape(type="line", x0=50, x1=50, y0=0, y1=100, line=dict(color="#8b949e", width=1, dash="dash"))
+    fig_quad.add_shape(type="line", x0=0, x1=100, y0=50, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
+
+    # Style et mise en page du layout
+    fig_quad.update_layout(
+        plot_bgcolor='#0c1017',
+        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=20, b=50, l=60, r=20),
+        height=680,
+        xaxis=dict(
+            title=dict(text=f"{axis_x.upper()} (Score)", font=dict(color='#8b949e', size=12, weight='bold')),
+            range=[-2, 102],
+            gridcolor='#21262d',
+            tickfont=dict(color='#8b949e'),
+            fixedrange=True
+        ),
+        yaxis=dict(
+            title=dict(text=f"{axis_y.upper()} (Score)", font=dict(color='#8b949e', size=12, weight='bold')),
+            range=[-2, 102],
+            gridcolor='#21262d',
+            tickfont=dict(color='#8b949e'),
+            fixedrange=True
         )
-        fig.add_shape(type="line", x0=50, y0=-5, x1=50, y1=105, line=dict(color="#8b949e", width=1, dash="dash"))
-        fig.add_shape(type="line", x0=-5, y0=50, x1=105, y1=50, line=dict(color="#8b949e", width=1, dash="dash"))
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    )
+
+    st.plotly_chart(fig_quad, use_container_width=True, config={'displayModeBar': True})
