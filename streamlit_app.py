@@ -1,11 +1,11 @@
 import html
-import streamlit as st
-import pandas as pd
+import math
+from datetime import datetime
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
-import math
+import streamlit as st
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="DATA'Foot Scouting", layout="wide", initial_sidebar_state="expanded")
@@ -86,8 +86,7 @@ st.markdown("""
 
 
 # ===========================================================================
-# CORRECTION 1 : Fonction de couleur UNIFIÉE (suppression du doublon dans tab3)
-# Les deux paliers sont identiques, on n'a plus qu'une seule source de vérité.
+# COULEURS UNIFIÉES
 # ===========================================================================
 def get_fm_color(val: float) -> str:
     """Retourne la couleur FM associée à une valeur numérique sur 100."""
@@ -95,25 +94,18 @@ def get_fm_color(val: float) -> str:
         val = float(val)
         if math.isnan(val):
             return '#4a5568'
-        if val >= 90:
-            return '#00d2ff'   # ELITE  (Cyan)
-        elif val >= 70:
-            return '#00ff66'   # FORT   (Vert)
-        elif val >= 50:
-            return '#ffd60a'   # CORRECT (Jaune)
-        elif val >= 30:
-            return '#ff9f0a'   # FRAGILE (Orange)
-        elif val >= 15:
-            return '#ff453a'   # FAIBLE  (Rouge)
-        else:
-            return '#bf5af2'   # CRITIQUE (Violet)
+        if val >= 90: return '#00d2ff'   # ELITE   (Cyan)
+        elif val >= 70: return '#00ff66' # FORT    (Vert)
+        elif val >= 50: return '#ffd60a' # CORRECT (Jaune)
+        elif val >= 30: return '#ff9f0a' # FRAGILE (Orange)
+        elif val >= 15: return '#ff453a' # FAIBLE  (Rouge)
+        else: return '#bf5af2'           # CRITIQUE (Violet)
     except Exception:
         return '#4a5568'
 
 
 # ===========================================================================
-# CORRECTION 2 : Constantes clubs externalisées hors de la fonction cachée
-# Construites une seule fois au démarrage du module, pas à chaque import.
+# CONSTANTES ET REFERENTIELS
 # ===========================================================================
 CLUBS_PREMIER_LEAGUE = {c.upper() for c in [
     "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", "Burnley", "Chelsea",
@@ -186,31 +178,29 @@ def load_and_process_data():
     df = pd.read_excel("MILIEUX.ods", engine="odf")
     df.columns = [str(c).strip() for c in df.columns]
 
-    # Colonne A = Âge
     df.rename(columns={df.columns[0]: "Âge"}, inplace=True)
     df["Âge"] = pd.to_numeric(df["Âge"], errors='coerce').fillna(22).astype(int)
 
     player_col = "Joueur" if "Joueur" in df.columns else df.columns[1]
     df[player_col] = df[player_col].astype(str).str.upper().str.strip()
 
-    # Détection de la colonne Équipe (avec ou sans accent)
     if 'Équipe' in df.columns:
         team_col = 'Équipe'
     elif 'Equipe' in df.columns:
-        team_col = 'Equipe'
-        df.rename(columns={'Equipe': 'Équipe'}, inplace=True)  # normalisation
+        df.rename(columns={'Equipe': 'Équipe'}, inplace=True)
         team_col = 'Équipe'
     else:
         team_col = None
 
     if team_col:
+        df['Équipe'] = df['Équipe'].fillna("Sans club")
         df['Championnat']     = df['Équipe'].apply(attribuer_championnat)
         df['LDC_Quart_Etape'] = df['Équipe'].apply(lambda c: str(c).upper().strip() in CLUBS_LDC_QUART)
     else:
+        df['Équipe']          = "Sans club"
         df['Championnat']     = "Autre"
         df['LDC_Quart_Etape'] = False
 
-    # --- RÔLES ---
     role_cols = [c for c in ROLES_MAPPING.keys() if c in df.columns]
 
     for col in ['M'] + role_cols:
@@ -220,17 +210,11 @@ def load_and_process_data():
     df['Rôle Majeur']      = df['Role_Code_Majeur'].map(ROLES_MAPPING)
     df['Role_Valeur_Max']  = df[role_cols].max(axis=1)
 
-    # --- CALCUL DE LA NOTE GÉNÉRALE ---
     N = len(df)
-
     df['Score_M']    = df['M']
     df['Score_Role'] = df['Role_Valeur_Max']
-
     df['Rang_Global_M']    = df['M'].rank(ascending=False, method='min')
 
-    # ===========================================================================
-    # CORRECTION 3 : Protection division par zéro (N == 1)
-    # ===========================================================================
     if N > 1:
         df['Score_Rang_Global'] = ((df['Rang_Global_M'] / N) - 1) * -100
     else:
@@ -255,9 +239,7 @@ def load_and_process_data():
 
     df['Note_Moyenne_Stats'] = df.apply(calculer_note, axis=1)
 
-    # --- STATISTIQUES DE COMPÉTENCES ---
     stats_cols = [c for c in STATS_MAPPING.keys() if c in df.columns]
-
     for col in stats_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         df[f'{col} (Centile)'] = df[col].round().astype(int)
@@ -273,8 +255,7 @@ except Exception as e:
 
 
 # ===========================================================================
-# CORRECTION 4 : Construction HTML du tableau sans iterrows()
-# On utilise une list-comprehension + "".join() → beaucoup plus rapide.
+# GENERATION DE TABLEAU VIA VECTORISATION (PLUS DE ITERROWS)
 # ===========================================================================
 def build_html_table(table_df: pd.DataFrame, player_col: str, stats_cols: list) -> str:
     headers = (
@@ -282,29 +263,25 @@ def build_html_table(table_df: pd.DataFrame, player_col: str, stats_cols: list) 
         "<th class='fm-th'>Âge</th>"
         "<th class='fm-th'>Rôle</th>"
         "<th class='fm-th'>Général</th>"
-    ) + "".join(
-        f"<th class='fm-th'>{STATS_MAPPING[c].upper()}</th>" for c in stats_cols
-    )
+    ) + "".join(f"<th class='fm-th'>{STATS_MAPPING[c].upper()}</th>" for c in stats_cols)
 
     def build_row(row):
-        # CORRECTION 5 : Échappement HTML des données utilisateur
         p_name  = html.escape(str(row[player_col]).upper())
-        p_club  = html.escape(str(row['Équipe']) if pd.notna(row.get('Équipe')) else "Sans club")
+        p_club  = html.escape(str(row['Équipe']))
         p_role  = html.escape(str(row['Rôle Majeur']))
         p_age   = int(row["Âge"])
         p_note  = int(round(row['Note_Moyenne_Stats']))
         c_note  = get_fm_color(p_note)
 
-        def _stat_cell(c, row=row):
-            col_key = f"{c} (Centile)"
-            val     = row[col_key]
-            color   = get_fm_color(val)
-            return (
+        stat_cells = ""
+        for c in stats_cols:
+            val = row[f"{c} (Centile)"]
+            color = get_fm_color(val)
+            stat_cells += (
                 f"<td class='fm-td'>"
                 f"<span class='fm-badge' style='border:2px solid {color};color:{color} !important;'>"
                 f"{val}</span></td>"
             )
-        stat_cells = "".join(_stat_cell(c) for c in stats_cols)
 
         return (
             f"<tr class='fm-tr'>"
@@ -323,11 +300,9 @@ def build_html_table(table_df: pd.DataFrame, player_col: str, stats_cols: list) 
             f"{stat_cells}</tr>"
         )
 
-    rows = "".join(build_row(row) for _, row in table_df.iterrows())
-    return (
-        f"<table class='fm-table'><thead><tr>{headers}</tr></thead>"
-        f"<tbody>{rows}</tbody></table>"
-    )
+    # Remplacement de l'iterrows() lent par un .apply() beaucoup plus efficace
+    rows = "".join(table_df.apply(build_row, axis=1))
+    return f"<table class='fm-table'><thead><tr>{headers}</tr></thead><tbody>{rows}</tbody></table>"
 
 
 # --- INTERFACE SIDEBAR ---
@@ -338,16 +313,12 @@ search_query   = st.sidebar.text_input("🔍 Rechercher un joueur", "").strip().
 age_min, age_max = int(df["Âge"].min()), int(df["Âge"].max())
 selected_age   = st.sidebar.slider("Tranche d'âge", age_min, age_max, (age_min, age_max))
 
-available_clubs = sorted(df['Équipe'].dropna().unique()) if 'Équipe' in df.columns else []
+available_clubs = sorted(df['Équipe'].dropna().unique())
 selected_clubs  = st.sidebar.multiselect("Clubs / Équipes", options=available_clubs)
 
 available_roles = sorted(df['Rôle Majeur'].dropna().unique())
 selected_roles  = st.sidebar.multiselect("Rôles Tactiques", options=available_roles)
 
-# ===========================================================================
-# CORRECTION 6 : Filtres de compétences dans un st.form → un seul re-run
-# au moment où l'utilisateur clique "Appliquer", pas à chaque mouvement de slider.
-# ===========================================================================
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "<h3 style='color:#00d2ff;font-size:14px;margin-bottom:5px;text-transform:uppercase;'>"
@@ -360,10 +331,7 @@ st.sidebar.markdown(
 )
 
 with st.sidebar.form("form_skills"):
-    min_skills = {
-        c: st.slider(STATS_MAPPING[c], 0, 100, 0, step=5)
-        for c in stats_cols
-    }
+    min_skills = {c: st.slider(STATS_MAPPING[c], 0, 100, 0, step=5) for c in stats_cols}
     st.form_submit_button("Appliquer les filtres")
 
 
@@ -436,8 +404,7 @@ with tab2:
         nom_joueur = html.escape(parts[0])
         nom_famille = html.escape(parts[1]) if len(parts) > 1 else "&nbsp;"
 
-        # CORRECTION 5 (suite) : échappement des données dans le profil
-        p_club_str = html.escape(str(p_data['Équipe']).upper() if pd.notna(p_data.get('Équipe')) else 'SANS CLUB')
+        p_club_str = html.escape(str(p_data['Équipe']).upper())
         p_role_str = html.escape(str(p_data['Rôle Majeur']).upper())
         p_age      = f"{int(p_data['Âge'])} ANS"
 
@@ -594,7 +561,6 @@ with tab2:
 
 
 # --- ONGLET 3 : COMPARATEUR ---
-# CORRECTION 1 (suite) : get_comparator_color supprimée → on utilise get_fm_color partout
 with tab3:
     st.subheader("⚔️ Comparateur de Cartes Face-à-Face")
 
@@ -602,7 +568,7 @@ with tab3:
     selected_players = st.multiselect(
         "Choisissez les joueurs à comparer side-by-side",
         options=all_players,
-        default=all_players[:2],
+        default=all_players[:2] if len(all_players) >= 2 else all_players,
     )
 
     if len(selected_players) >= 2:
@@ -617,7 +583,7 @@ with tab3:
             )
         for idx, p_name in enumerate(selected_players):
             p_row  = df[df[player_col] == p_name].iloc[0]
-            p_club = html.escape(str(p_row['Équipe']) if pd.notna(p_row.get('Équipe')) else "Sans club")
+            p_club = html.escape(str(p_row['Équipe']))
             p_role = html.escape(str(p_row['Rôle Majeur']))
             with cols_header[idx + 1]:
                 st.markdown(
@@ -680,97 +646,42 @@ with tab4:
         unsafe_allow_html=True,
     )
 
-    col_x, col_y = st.columns(2)
-    with col_x:
-        idx_x  = stats_cols.index("CONS") if "CONS" in stats_cols else 0
-        axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", stats_cols, index=idx_x,
-                               format_func=lambda c: STATS_MAPPING[c])
-    with col_y:
-        idx_y  = stats_cols.index("CREA") if "CREA" in stats_cols else (1 if len(stats_cols) > 1 else 0)
-        axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", stats_cols, index=idx_y,
-                               format_func=lambda c: STATS_MAPPING[c])
+    if len(filtered_df) > 0:
+        col_x, col_y = st.columns(2)
+        with col_x:
+            idx_x  = stats_cols.index("CONS") if "CONS" in stats_cols else 0
+            axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", stats_cols, index=idx_x, format_func=lambda x: STATS_MAPPING[x])
+        with col_y:
+            idx_y  = stats_cols.index("RECU") if "RECU" in stats_cols else min(1, len(stats_cols)-1)
+            axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", stats_cols, index=idx_y, format_func=lambda x: STATS_MAPPING[x])
 
-    st.markdown("---")
-    st.markdown(
-        "<h4 style='color:#ffffff;font-size:14px;font-weight:800;text-transform:uppercase;margin-bottom:10px;'>"
-        "⚙️ Options d'affichage des labels</h4>",
-        unsafe_allow_html=True,
-    )
+        col_col_x = f"{axis_x} (Centile)"
+        col_col_y = f"{axis_y} (Centile)"
 
-    c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 2.0, 2.0])
-    with c_ctrl1:
-        mode_label = st.radio(
-            "Affichage du texte sur le graphique",
-            ["Masquer tous les noms", "Afficher tous les noms", "Sélection à la carte"],
-            index=0,
+        fig_quad = px.scatter(
+            filtered_df,
+            x=col_col_x,
+            y=col_col_y,
+            text=player_col,
+            hover_data=['Équipe', 'Rôle Majeur', 'Note_Moyenne_Stats'],
+            color='Note_Moyenne_Stats',
+            color_continuous_scale='Viridis',
         )
-    with c_ctrl2:
-        liste_equipes  = sorted(filtered_df['Équipe'].dropna().unique()) if 'Équipe' in filtered_df.columns else []
-        equipes_cibles = st.multiselect("Afficher les noms de l'équipe :", liste_equipes)
-    with c_ctrl3:
-        liste_joueurs  = sorted(filtered_df[player_col].unique())
-        joueurs_cibles = st.multiselect("Chercher et afficher un joueur spécifique :", liste_joueurs)
 
-    def compute_label(row):
-        nom_j  = str(row[player_col])
-        club_j = str(row.get('Équipe', ''))
-        if mode_label == "Afficher tous les noms":
-            return nom_j
-        if nom_j in joueurs_cibles or club_j in equipes_cibles:
-            return nom_j
-        return ""
+        fig_quad.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='White')))
+        
+        # Lignes médianes à 50 (Centiles)
+        fig_quad.add_shape(type="line", x0=50, y0=0, x1=50, y1=100, line=dict(color="#21262d", width=2, dash="dash"))
+        fig_quad.add_shape(type="line", x0=0, y0=50, x1=100, y1=50, line=dict(color="#21262d", width=2, dash="dash"))
 
-    plot_text = [compute_label(row) for _, row in filtered_df.iterrows()]
-
-    fig_quad = go.Figure()
-    scores_couleurs = filtered_df['Note_Moyenne_Stats'] if 'Note_Moyenne_Stats' in filtered_df.columns else [50] * len(filtered_df)
-
-    fig_quad.add_trace(go.Scatter(
-        x=filtered_df[axis_x],
-        y=filtered_df[axis_y],
-        mode="markers+text",
-        text=plot_text,
-        textposition="top center",
-        textfont=dict(color="#ffffff", size=10),
-        marker=dict(
-            size=11,
-            color=scores_couleurs,
-            colorscale=[
-                [0.0, '#bf5af2'], [0.3, '#ff453a'], [0.5, '#ff9f0a'],
-                [0.6, '#ffd60a'], [0.8, '#00ff66'], [1.0, '#00d2ff'],
-            ],
-            showscale=True,
-            colorbar=dict(title="Note Moyenne", thickness=15, tickfont=dict(color='#8b949e')),
-            line=dict(width=1, color='#0d1117'),
-        ),
-        hovertemplate=(
-            "<b>%{customdata[0]}</b><br>"
-            "🛡️ Club : %{customdata[1]}<br>"
-            f"⚡ {STATS_MAPPING[axis_x]} : %{{x}}/100<br>"
-            f"🎯 {STATS_MAPPING[axis_y]} : %{{y}}/100<br>"
-            "📈 Note Globale : %{customdata[2]}/100<extra></extra>"
-        ),
-        customdata=list(zip(
-            filtered_df[player_col],
-            filtered_df['Équipe'] if 'Équipe' in filtered_df.columns else ['Sans Club'] * len(filtered_df),
-            filtered_df['Note_Moyenne_Stats'].round(1) if 'Note_Moyenne_Stats' in filtered_df.columns else [0] * len(filtered_df),
-        )),
-    ))
-
-    fig_quad.add_shape(type="line", x0=50, x1=50, y0=0,  y1=100, line=dict(color="#8b949e", width=1, dash="dash"))
-    fig_quad.add_shape(type="line", x0=0,  x1=100, y0=50, y1=50,  line=dict(color="#8b949e", width=1, dash="dash"))
-
-    fig_quad.update_layout(
-        plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=20, b=50, l=60, r=20),
-        height=680,
-        xaxis=dict(
-            title=dict(text=f"{STATS_MAPPING[axis_x].upper()} (Score)", font=dict(color='#8b949e', size=12)),
-            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
-        ),
-        yaxis=dict(
-            title=dict(text=f"{STATS_MAPPING[axis_y].upper()} (Score)", font=dict(color='#8b949e', size=12)),
-            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
-        ),
-    )
-    st.plotly_chart(fig_quad, use_container_width=True, config={'displayModeBar': True})
+        fig_quad.update_layout(
+            plot_bgcolor='#0c1017',
+            paper_bgcolor='rgba(0,0,0,0)',
+            height=600,
+            font=dict(color='#e6edf2'),
+            xaxis=dict(title=STATS_MAPPING[axis_x].upper() + " (Centile)", range=[0, 105], gridcolor='#161b22'),
+            yaxis=dict(title=STATS_MAPPING[axis_y].upper() + " (Centile)", range=[0, 105], gridcolor='#161b22'),
+        )
+        st.plotly_chart(fig_quad, use_container_width=True)
+    else:
+        st.warning("Aucune donnée disponible pour générer le graphique.")
