@@ -412,27 +412,32 @@ with tab2:
         note_color       = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
+        # --- STYLE CSS AJUSTÉ ---
         st.markdown("""
         <style>
             .dt-card { background-color:#0c1017; border:1px solid #21262d; border-radius:6px;
-                       padding:16px; height:235px; display:flex; color:#e6edf2; box-sizing:border-box; }
-            .profile-box { justify-content:flex-start; align-items:center; gap:15px; }
-            .data-box    { flex-direction:column; justify-content:space-between; }
-            .roles-box   { flex-direction:column; justify-content:flex-start; padding:18px 24px !important; }
-            .rating-box  { flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+                       padding:16px; height:255px; display:flex; color:#e6edf2; box-sizing:border-box; }
+            .profile-box { justify-content:flex-start; align-items:center; gap:20px; height:255px !important; }
+            .data-box    { flex-direction:column; justify-content:space-between; height:255px !important; }
+            .roles-box   { flex-direction:column; justify-content:flex-start; padding:18px 20px !important; height:255px !important; }
+            .rating-box  { flex-direction:column; justify-content:center; align-items:center; text-align:center; height:255px !important; }
+            
             .data-item-mini { display:flex; align-items:center; gap:8px; }
             .data-text-mini { display:flex; flex-direction:column; line-height:1.2; }
             .data-val-mini  { font-size:12px; font-weight:800; color:#ffffff; text-transform:uppercase; }
             .data-lbl-mini  { font-size:9px; color:#8b949e; text-transform:uppercase; font-weight:700; }
-            .roles-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;
-                          margin-top:14px; width:100%; align-items:center; }
-            .role-badge-item  { display:flex; align-items:center; gap:12px; }
+            
+            /* Grille de rôles (ÉCRIT MOINS GROS) */
+            .roles-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;
+                          margin-top:16px; width:100%; align-items:center; }
+            .role-badge-item  { display:flex; align-items:center; gap:8px; }
             .role-score-badge { border:2px solid #fff; display:flex; align-items:center;
-                                justify-content:center; width:52px; height:38px; border-radius:6px;
-                                font-weight:900; font-size:1.3rem; font-family:'Arial Black',sans-serif;
+                                justify-content:center; width:40px; height:28px; border-radius:4px;
+                                font-weight:900; font-size:0.95rem; font-family:'Arial Black',sans-serif;
                                 text-align:center; flex-shrink:0; }
-            .role-name-lbl    { font-size:1.15rem; font-weight:800; color:#ffffff;
-                                text-transform:uppercase; white-space:nowrap; letter-spacing:0.3px; }
+            .role-name-lbl    { font-size:0.85rem; font-weight:800; color:#ffffff;
+                                text-transform:uppercase; white-space:nowrap; letter-spacing:0.2px; }
+                                
             .rating-big-new   { font-size:80px; font-weight:900; line-height:0.9;
                                 font-family:'Arial Black',sans-serif; }
             .rating-max-new   { font-size:20px; color:#8b949e; font-weight:bold; }
@@ -440,27 +445,30 @@ with tab2:
         """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2, col3, col4 = st.columns([1.5, 0.9, 3.2, 1.0])
+        
+        # Colonne 1 plus large (2.2) et Colonne 3 plus courte (2.5)
+        col1, col2, col3, col4 = st.columns([2.2, 0.9, 2.5, 1.0])
 
         with col1:
             st.markdown(f"""
             <div class="dt-card profile-box">
-                <div style="font-size:50px;background:#05070a;border:1px solid #21262d;border-radius:6px;
-                            width:90px;height:120px;display:flex;align-items:center;justify-content:center;
+                <!-- Silhouette agrandie pour occuper presque tout le bloc en hauteur -->
+                <div style="font-size:75px; background:#05070a; border:1px solid #21262d; border-radius:6px;
+                            width:140px; height:215px; display:flex; align-items:center; justify-content:center;
                             flex-shrink:0;">👤</div>
-                <div style="display:flex;flex-direction:column;justify-content:center;min-width:0;">
-                    <div style="font-size:16px;color:#8b949e;font-weight:700;line-height:1;text-transform:uppercase;">{nom_joueur}</div>
-                    <div style="font-size:24px;color:#ffffff;font-weight:900;line-height:1.1;margin-bottom:2px;text-transform:uppercase;">{nom_famille}</div>
-                    <div style="font-size:13px;color:#ffffff;font-weight:800;text-transform:uppercase;margin-bottom:6px;">MILIEU DE TERRAIN</div>
-                    <div style="color:#ff453a;font-size:13px;font-weight:800;margin-bottom:2px;">🛡️ {p_club_str}</div>
-                    <div style="color:{note_color};font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:6px;">🟢 {p_role_str}</div>
-                    <div style="font-size:12px;color:#ffffff;font-weight:700;">🎂 {p_age}</div>
+                <div style="display:flex; flex-direction:column; justify-content:center; min-width:0;">
+                    <div style="font-size:18px; color:#8b949e; font-weight:700; line-height:1; text-transform:uppercase;">{nom_joueur}</div>
+                    <div style="font-size:28px; color:#ffffff; font-weight:900; line-height:1.1; margin-bottom:4px; text-transform:uppercase;">{nom_famille}</div>
+                    <div style="font-size:14px; color:#ffffff; font-weight:800; text-transform:uppercase; margin-bottom:8px;">MILIEU DE TERRAIN</div>
+                    <div style="color:#ff453a; font-size:14px; font-weight:800; margin-bottom:3px;">🛡️ {p_club_str}</div>
+                    <div style="color:{note_color}; font-size:13px; font-weight:800; text-transform:uppercase; margin-bottom:8px;">🟢 {p_role_str}</div>
+                    <div style="font-size:13px; color:#ffffff; font-weight:700;">🎂 {p_age}</div>
                 </div>
             </div>""", unsafe_allow_html=True)
 
         with col2:
             st.markdown(f"""
-            <div class="dt-card data-box" style="padding-top:14px;padding-bottom:14px;">
+            <div class="dt-card data-box" style="padding-top:14px; padding-bottom:14px;">
                 <div class="data-item-mini">⚙️ <div class="data-text-mini"><span class="data-val-mini">DTFOOTBALL</span><span class="data-lbl-mini">Création &amp; Calculs</span></div></div>
                 <div class="data-item-mini">⏳ <div class="data-text-mini"><span class="data-val-mini">2025/2026</span><span class="data-lbl-mini">Saison</span></div></div>
                 <div class="data-item-mini">ℹ️ <div class="data-text-mini"><span class="data-val-mini">WYSCOUT</span><span class="data-lbl-mini">Source</span></div></div>
@@ -470,21 +478,22 @@ with tab2:
         with col3:
             b_html = "".join(
                 f'<div class="role-badge-item">'
-                f'<div class="role-score-badge" style="border-color:{get_fm_color(score)};color:{get_fm_color(score)};">{score}</div>'
+                f'<div class="role-score-badge" style="border-color:{get_fm_color(score)}; color:{get_fm_color(score)};">{score}</div>'
                 f'<div class="role-name-lbl">{html.escape(name)}</div></div>'
                 for name, score in roles_alternatifs.items()
             )
+            # Titre ÉCRIT PLUS GROS
             st.markdown(f"""
             <div class="dt-card roles-box">
-                <div style="font-size:16px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;">PERFORMANCE PROFILS</div>
+                <div style="font-size:18px; font-weight:900; color:#ffffff; text-transform:uppercase; letter-spacing:0.6px;">PERFORMANCE PROFILS</div>
                 <div class="roles-grid">{b_html}</div>
             </div>""", unsafe_allow_html=True)
 
         with col4:
             st.markdown(f"""
             <div class="dt-card rating-box">
-                <div style="font-size:11px;font-weight:800;color:#8b949e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">NOTE GÉNÉRALE</div>
-                <div style="display:flex;align-items:flex-end;justify-content:center;">
+                <div style="font-size:11px; font-weight:800; color:#8b949e; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">NOTE GÉNÉRALE</div>
+                <div style="display:flex; align-items:flex-end; justify-content:center;">
                     <span class="rating-big-new" style="color:{note_color};">{general_note}</span>
                     <span class="rating-max-new" style="margin-bottom:4px;">/100</span>
                 </div>
@@ -493,8 +502,8 @@ with tab2:
         # --- BARRES STATISTIQUES ---
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(
-            "<h3 style='color:#ffffff;font-size:16px;font-weight:800;text-transform:uppercase;"
-            "letter-spacing:0.5px;margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>",
+            "<h3 style='color:#ffffff; font-size:16px; font-weight:800; text-transform:uppercase;"
+            "letter-spacing:0.5px; margin-bottom:15px;'>PERFORMANCES STATISTIQUES</h3>",
             unsafe_allow_html=True,
         )
 
@@ -537,9 +546,9 @@ with tab2:
             {"y_text": 6,  "title": "CRITIQUE", "sub": "ALERTE DATA",      "color": "#bf5af2"},
         ]:
             t_html = (
-                f"<b style='color:{t['color']};font-size:14px;font-family:\"Arial Black\",sans-serif;"
-                f"font-weight:900;letter-spacing:1px;'>{t['title']}</b>"
-                f"<br><span style='color:#8b949e;font-size:9px;font-weight:800;letter-spacing:0.5px;'>{t['sub']}</span>"
+                f"<b style='color:{t['color']}; font-size:14px; font-family:\"Arial Black\",sans-serif;"
+                f"font-weight:900; letter-spacing:1px;'>{t['title']}</b>"
+                f"<br><span style='color:#8b949e; font-size:9px; font-weight:800; letter-spacing:0.5px;'>{t['sub']}</span>"
             )
             fig_bars.add_annotation(
                 xref="paper", yref="y", x=-0.03, y=float(t["y_text"]),
