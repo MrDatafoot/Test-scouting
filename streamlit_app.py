@@ -655,42 +655,97 @@ with tab4:
         unsafe_allow_html=True,
     )
 
-    if len(filtered_df) > 0:
-        col_x, col_y = st.columns(2)
-        with col_x:
-            idx_x  = stats_cols.index("CONS") if "CONS" in stats_cols else 0
-            axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", stats_cols, index=idx_x, format_func=lambda x: STATS_MAPPING[x])
-        with col_y:
-            idx_y  = stats_cols.index("RECU") if "RECU" in stats_cols else min(1, len(stats_cols)-1)
-            axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", stats_cols, index=idx_y, format_func=lambda x: STATS_MAPPING[x])
+    col_x, col_y = st.columns(2)
+    with col_x:
+        idx_x  = stats_cols.index("CONS") if "CONS" in stats_cols else 0
+        axis_x = st.selectbox("Sélectionner l'Axe X (Horizontal)", stats_cols, index=idx_x,
+                               format_func=lambda c: STATS_MAPPING[c])
+    with col_y:
+        idx_y  = stats_cols.index("CREA") if "CREA" in stats_cols else (1 if len(stats_cols) > 1 else 0)
+        axis_y = st.selectbox("Sélectionner l'Axe Y (Vertical)", stats_cols, index=idx_y,
+                               format_func=lambda c: STATS_MAPPING[c])
 
-        col_col_x = f"{axis_x} (Centile)"
-        col_col_y = f"{axis_y} (Centile)"
+    st.markdown("---")
+    st.markdown(
+        "<h4 style='color:#ffffff;font-size:14px;font-weight:800;text-transform:uppercase;margin-bottom:10px;'>"
+        "⚙️ Options d'affichage des labels</h4>",
+        unsafe_allow_html=True,
+    )
 
-        fig_quad = px.scatter(
-            filtered_df,
-            x=col_col_x,
-            y=col_col_y,
-            text=player_col,
-            hover_data=['Équipe', 'Rôle Majeur', 'Note_Moyenne_Stats'],
-            color='Note_Moyenne_Stats',
-            color_continuous_scale='Viridis',
+    c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 2.0, 2.0])
+    with c_ctrl1:
+        mode_label = st.radio(
+            "Affichage du texte sur le graphique",
+            ["Masquer tous les noms", "Afficher tous les noms", "Sélection à la carte"],
+            index=0,
         )
+    with c_ctrl2:
+        liste_equipes  = sorted(filtered_df['Équipe'].dropna().unique()) if 'Équipe' in filtered_df.columns else []
+        equipes_cibles = st.multiselect("Afficher les noms de l'équipe :", liste_equipes)
+    with c_ctrl3:
+        liste_joueurs  = sorted(filtered_df[player_col].unique())
+        joueurs_cibles = st.multiselect("Chercher et afficher un joueur spécifique :", liste_joueurs)
 
-        fig_quad.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='White')))
-        
-        # Lignes médianes à 50 (Centiles)
-        fig_quad.add_shape(type="line", x0=50, y0=0, x1=50, y1=100, line=dict(color="#21262d", width=2, dash="dash"))
-        fig_quad.add_shape(type="line", x0=0, y0=50, x1=100, y1=50, line=dict(color="#21262d", width=2, dash="dash"))
+    def compute_label(row):
+        nom_j  = str(row[player_col])
+        club_j = str(row.get('Équipe', ''))
+        if mode_label == "Afficher tous les noms":
+            return nom_j
+        if nom_j in joueurs_cibles or club_j in equipes_cibles:
+            return nom_j
+        return ""
 
-        fig_quad.update_layout(
-            plot_bgcolor='#0c1017',
-            paper_bgcolor='rgba(0,0,0,0)',
-            height=600,
-            font=dict(color='#e6edf2'),
-            xaxis=dict(title=STATS_MAPPING[axis_x].upper() + " (Centile)", range=[0, 105], gridcolor='#161b22'),
-            yaxis=dict(title=STATS_MAPPING[axis_y].upper() + " (Centile)", range=[0, 105], gridcolor='#161b22'),
-        )
-        st.plotly_chart(fig_quad, use_container_width=True)
-    else:
-        st.warning("Aucune donnée disponible pour générer le graphique.")
+    plot_text = [compute_label(row) for _, row in filtered_df.iterrows()]
+
+    fig_quad = go.Figure()
+    scores_couleurs = filtered_df['Note_Moyenne_Stats'] if 'Note_Moyenne_Stats' in filtered_df.columns else [50] * len(filtered_df)
+
+    fig_quad.add_trace(go.Scatter(
+        x=filtered_df[axis_x],
+        y=filtered_df[axis_y],
+        mode="markers+text",
+        text=plot_text,
+        textposition="top center",
+        textfont=dict(color="#ffffff", size=10),
+        marker=dict(
+            size=11,
+            color=scores_couleurs,
+            colorscale=[
+                [0.0, '#bf5af2'], [0.3, '#ff453a'], [0.5, '#ff9f0a'],
+                [0.6, '#ffd60a'], [0.8, '#00ff66'], [1.0, '#00d2ff'],
+            ],
+            showscale=True,
+            colorbar=dict(title="Note Moyenne", thickness=15, tickfont=dict(color='#8b949e')),
+            line=dict(width=1, color='#0d1117'),
+        ),
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>"
+            "🛡️ Club : %{customdata[1]}<br>"
+            f"⚡ {STATS_MAPPING[axis_x]} : %{{x}}/100<br>"
+            f"🎯 {STATS_MAPPING[axis_y]} : %{{y}}/100<br>"
+            "📈 Note Globale : %{customdata[2]}/100<extra></extra>"
+        ),
+        customdata=list(zip(
+            filtered_df[player_col],
+            filtered_df['Équipe'] if 'Équipe' in filtered_df.columns else ['Sans Club'] * len(filtered_df),
+            filtered_df['Note_Moyenne_Stats'].round(1) if 'Note_Moyenne_Stats' in filtered_df.columns else [0] * len(filtered_df),
+        )),
+    ))
+
+    fig_quad.add_shape(type="line", x0=50, x1=50, y0=0,  y1=100, line=dict(color="#8b949e", width=1, dash="dash"))
+    fig_quad.add_shape(type="line", x0=0,  x1=100, y0=50, y1=50,  line=dict(color="#8b949e", width=1, dash="dash"))
+
+    fig_quad.update_layout(
+        plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=20, b=50, l=60, r=20),
+        height=680,
+        xaxis=dict(
+            title=dict(text=f"{STATS_MAPPING[axis_x].upper()} (Score)", font=dict(color='#8b949e', size=12)),
+            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
+        ),
+        yaxis=dict(
+            title=dict(text=f"{STATS_MAPPING[axis_y].upper()} (Score)", font=dict(color='#8b949e', size=12)),
+            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
+        ),
+    )
+    st.plotly_chart(fig_quad, use_container_width=True, config={'displayModeBar': True})
