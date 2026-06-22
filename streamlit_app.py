@@ -320,12 +320,12 @@ selected_roles  = st.sidebar.multiselect("Rôles Tactiques", options=available_r
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    <h3 style='color:#00d2ff;font-size:14px;margin-bottom:5px;text-transform:uppercase;'>🎯 Compétences Minimales</h3>,
-    unsafe_allow_html=True,
+    "<h3 style='color:#00d2ff;font-size:14px;margin-bottom:5px;text-transform:uppercase;'>🎯 Compétences Minimales</h3>",
+    unsafe_allow_html=True
 )
 st.sidebar.markdown(
     "<p style='font-size:11px;color:#8b949e;margin-bottom:15px;'>Fixer un seuil requis par domaine :</p>",
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
 with st.sidebar.form("form_skills"):
