@@ -1,4 +1,4 @@
-import htmL
+import html
 import math
 from datetime import datetime
 import numpy as np
@@ -255,14 +255,13 @@ except Exception as e:
 
 
 # ===========================================================================
-# GENERATION DE TABLEAU VIA VECTORISATION (PLUS DE ITERROWS)
+# GENERATION DE TABLEAU VIA VECTORISATION
 # ===========================================================================
 def build_html_table(table_df: pd.DataFrame, player_col: str, stats_cols: list) -> str:
     headers = (
         "<th class='fm-th fm-th-left'>Joueur / Club</th>"
         "<th class='fm-th'>Âge</th>"
         "<th class='fm-th'>Rôle</th>"
-
         "<th class='fm-th'>Général</th>"
     ) + "".join(f"<th class='fm-th'>{STATS_MAPPING[c].upper()}</th>" for c in stats_cols)
 
@@ -301,7 +300,6 @@ def build_html_table(table_df: pd.DataFrame, player_col: str, stats_cols: list) 
             f"{stat_cells}</tr>"
         )
 
-    # Remplacement de l'iterrows() lent par un .apply() beaucoup plus efficace
     rows = "".join(table_df.apply(build_row, axis=1))
     return f"<table class='fm-table'><thead><tr>{headers}</tr></thead><tbody>{rows}</tbody></table>"
 
@@ -322,8 +320,7 @@ selected_roles  = st.sidebar.multiselect("Rôles Tactiques", options=available_r
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<h3 style='color:#00d2ff;font-size:14px;margin-bottom:5px;text-transform:uppercase;'>"
-    "🎯 Compétences Minimales</h3>",
+    <h3 style='color:#00d2ff;font-size:14px;margin-bottom:5px;text-transform:uppercase;'>🎯 Compétences Minimales</h3>,
     unsafe_allow_html=True,
 )
 st.sidebar.markdown(
@@ -413,7 +410,6 @@ with tab2:
         note_color       = get_fm_color(general_note)
         current_date_str = datetime.now().strftime("%d/%m/%Y")
 
-        # --- STYLE CSS AJUSTÉ ---
         st.markdown("""
         <style>
             .dt-card { background-color:#0c1017; border:1px solid #21262d; border-radius:6px;
@@ -428,7 +424,6 @@ with tab2:
             .data-val-mini  { font-size:12px; font-weight:800; color:#ffffff; text-transform:uppercase; }
             .data-lbl-mini  { font-size:9px; color:#8b949e; text-transform:uppercase; font-weight:700; }
             
-            /* Grille de rôles (ÉCRIT MOINS GROS) */
             .roles-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;
                           margin-top:16px; width:100%; align-items:center; }
             .role-badge-item  { display:flex; align-items:center; gap:8px; }
@@ -447,19 +442,16 @@ with tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Colonne 1 plus large (2.2) et Colonne 3 plus courte (2.5)
         col1, col2, col3, col4 = st.columns([2.2, 0.9, 2.5, 1.0])
 
         with col1:
             st.markdown(f"""
             <div class="dt-card profile-box">
-                <!-- Silhouette agrandie pour occuper presque tout le bloc en hauteur -->
                 <div style="font-size:75px; background:#05070a; border:1px solid #21262d; border-radius:6px;
                             width:140px; height:215px; display:flex; align-items:center; justify-content:center;
                             flex-shrink:0;">👤</div>
                 <div style="display:flex; flex-direction:column; justify-content:center; min-width:0;">
                     <div style="font-size:18px; color:#8b949e; font-weight:700; line-height:1; text-transform:uppercase;">{nom_joueur}</div>
-
                     <div style="font-size:28px; color:#ffffff; font-weight:900; line-height:1.1; margin-bottom:4px; text-transform:uppercase;">{nom_famille}</div>
                     <div style="font-size:14px; color:#ffffff; font-weight:800; text-transform:uppercase; margin-bottom:8px;">MILIEU DE TERRAIN</div>
                     <div style="color:#ff453a; font-size:14px; font-weight:800; margin-bottom:3px;">🛡️ {p_club_str}</div>
@@ -484,7 +476,6 @@ with tab2:
                 f'<div class="role-name-lbl">{html.escape(name)}</div></div>'
                 for name, score in roles_alternatifs.items()
             )
-            # Titre ÉCRIT PLUS GROS
             st.markdown(f"""
             <div class="dt-card roles-box">
                 <div style="font-size:18px; font-weight:900; color:#ffffff; text-transform:uppercase; letter-spacing:0.6px;">PERFORMANCE PROFILS</div>
@@ -635,8 +626,7 @@ with tab3:
                     unsafe_allow_html=True,
                 )
             for idx, p_name in enumerate(selected_players):
-                val_raw
- = df[df[player_col] == p_name].iloc[0].get(f'{c} (Centile)', 0)
+                val_raw = df[df[player_col] == p_name].iloc[0].get(f'{c} (Centile)', 0)
                 val     = int(float(val_raw)) if pd.notna(val_raw) else 0
                 c_val   = get_fm_color(val)
                 with cols_data[idx + 1]:
@@ -653,8 +643,7 @@ with tab3:
 # --- ONGLET 4 : ANALYSE QUADRANT ---
 with tab4:
     st.markdown(
-        "<h2 style='color:#ffffff;font-size:22px;font-weight:800;text-transform:uppercase;'>"
-        "📊 Graphique d'Analyse à Deux Axes (Cross-Analyse)</h2>",
+        "<h2 style='color:#ffffff;font-size:22px;font-weight:800;text-transform:uppercase;'>📊 Graphique d'Analyse à Deux Axes</h2>",
         unsafe_allow_html=True,
     )
  
@@ -669,98 +658,31 @@ with tab4:
                               format_func=lambda c: STATS_MAPPING.get(c, c))
  
     st.markdown("---")
-    st.markdown(
-        "<h4 style='color:#ffffff;font-size:14px;font-weight:800;text-transform:uppercase;margin-bottom:10px;'>"
-        "⚙️ Options d'affichage des labels</h4>",
-        unsafe_allow_html=True,
-    )
- 
-    c_ctrl1, c_ctrl2, c_ctrl3 = st.columns([1.5, 2.0, 2.0])
-    with c_ctrl1:
-        mode_label = st.radio(
-            "Affichage du texte sur le graphique",
-            ["Masquer tous les noms", "Afficher tous les noms", "Sélection à la carte"],
-            index=0,
-        )
-    with c_ctrl2:
-        liste_equipes = sorted(filtered_df['Équipe'].dropna().unique()) if 'Équipe' in filtered_df.columns else []
-        equipes_cibles = st.multiselect("Afficher les noms de l'équipe :", liste_equipes)
-    with c_ctrl3:
-        liste_joueurs = sorted(filtered_df[player_col].unique())
-        joueurs_cibles = st.multiselect("Chercher et afficher un joueur spécifique :", liste_joueurs)
- 
-    # Fonction de traitement optimisée pour .apply()
-    def compute_label(row):
-        if mode_label == "Masquer tous les noms":
-            return ""
-        nom_j  = str(row[player_col])
-        if mode_label == "Afficher tous les noms":
-            return nom_j
-        
-        # Mode : Sélection à la carte
-        club_j = str(row.get('Équipe', ''))
-        if nom_j in joueurs_cibles or club_j in equipes_cibles:
-            return nom_j
-        return ""
- 
-    # Remplacement de iterrows() par une vectorisation .apply() beaucoup plus rapide
-    plot_text = filtered_df.apply(compute_label, axis=1).tolist() if len(filtered_df) > 0 else []
- 
-    fig_quad = go.Figure()
-    scores_couleurs = filtered_df['Note_Moyenne_Stats'] if 'Note_Moyenne_Stats' in filtered_df.columns else [50] * len(filtered_df)
- 
-    # Ciblage des colonnes Centiles pour correspondre aux axes 0-100
-    col_graph_x = f"{axis_x} (Centile)"
-    col_graph_y = f"{axis_y} (Centile)"
-
+    
+    # Correction de la structure coupée de l'onglet 4
     if len(filtered_df) > 0:
-        fig_quad.add_trace(go.Scatter(
-            x=filtered_df[col_graph_x],
-            y=filtered_df[col_graph_y],
-            mode="markers+text",
-            text=plot_text,
-            textposition="top center",
-            textfont=dict(color="#ffffff", size=10),
-            marker=dict(
-                size=11,
-                color=scores_couleurs,
-                colorscale=[
-                    [0.0, '#bf5af2'], [0.3, '#ff453a'], [0.5, '#ff9f0a'],
-                    [0.6, '#ffd60a'], [0.8, '#00ff66'], [1.0, '#00d2ff'],
-                ],
-                showscale=True,
-                colorbar=dict(title="Note Moyenne", thickness=15, tickfont=dict(color='#8b949e')),
-                line=dict(width=1, color='#0d1117'),
-            ),
-            hovertemplate=(
-                "<b>%{customdata[0]}</b><br>"
-                "🛡️ Club : %{customdata[1]}<br>"
-                f"⚡ {STATS_MAPPING.get(axis_x)} : %{{x}}/100<br>"
-                f"🎯 {STATS_MAPPING.get(axis_y)} : %{{y}}/100<br>"
-                "📈 Note Globale : %{customdata[2]}/100<extra></extra>"
-            ),
-            customdata=list(zip(
-                filtered_df[player_col],
-                filtered_df['Équipe'] if 'Équipe' in filtered_df.columns else ['Sans Club'] * len(filtered_df),
-                filtered_df['Note_Moyenne_Stats'].round(1) if 'Note_Moyenne_Stats' in filtered_df.columns else [0] * len(filtered_df),
-            )),
-        ))
- 
-    # Lignes des quadrants à 50
-    fig_quad.add_shape(type="line", x0=50, x1=50, y0=0,  y1=100, line=dict(color="#8b949e", width=1, dash="dash"))
-    fig_quad.add_shape(type="line", x0=0,  x1=100, y0=50, y1=50,  line=dict(color="#8b949e", width=1, dash="dash"))
- 
-    fig_quad.update_layout(
-        plot_bgcolor='#0c1017', paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=20, b=50, l=60, r=20),
-        height=680,
-        xaxis=dict(
-            title=dict(text=f"{STATS_MAPPING.get(axis_x, axis_x).upper()} (Score)", font=dict(color='#8b949e', size=12)),
-            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
-        ),
-        yaxis=dict(
-            title=dict(text=f"{STATS_MAPPING.get(axis_y, axis_y).upper()} (Score)", font=dict(color='#8b949e', size=12)),
-            range=[-2, 102], gridcolor='#21262d', tickfont=dict(color='#8b949e'), fixedrange=True,
-        ),
-    )
-    st.plotly_chart(fig_quad, use_container_width=True, config={'displayModeBar': True})
+        fig_quad = px.scatter(
+            filtered_df,
+            x=f"{axis_x} (Centile)",
+            y=f"{axis_y} (Centile)",
+            text=player_col,
+            hover_name=player_col,
+            hover_data=["Équipe", "Âge", "Note_Moyenne_Stats"],
+            color="Note_Moyenne_Stats",
+            color_continuous_scale="Viridis"
+        )
+        
+        fig_quad.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='White')))
+        
+        fig_quad.update_layout(
+            plot_bgcolor='#0c1017',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color="#e6edf2"),
+            xaxis=dict(title=STATS_MAPPING[axis_x], gridcolor='#21262d', range=[0, 105]),
+            yaxis=dict(title=STATS_MAPPING[axis_y], gridcolor='#21262d', range=[0, 105]),
+            height=600
+        )
+        
+        st.plotly_chart(fig_quad, use_container_width=True)
+    else:
+        st.warning("Aucun élément à afficher pour le graphique quadrant.")
